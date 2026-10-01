@@ -46,7 +46,7 @@ const storageReport = {};
 let settings = loadSettings(undefined, storageReport);
 let place = locations.resolve(settings.timeZone, settings.location);
 
-const timeSource = createTimeSource(parseSimulation(window.location.search));
+const timeSource = createTimeSource(parseSimulation(window.location.search), { timeZone: settings.timeZone });
 const calendar = new CalendarRings(document.getElementById('clock-rings'));
 const analog = new AnalogClock(
   document.getElementById('clock-face-details'),
@@ -214,6 +214,9 @@ function applySettings(changedKey = null) {
   }
 
   if (changedKey === 'timeZone') {
+    // A running simulation is re-interpreted in the new zone (the real clock
+    // is an absolute instant and is unaffected).
+    timeSource.setTimeZone(settings.timeZone);
     // New temporal reference: forget everything rendered for the old zone so
     // nothing is skipped just because a value happens to be equal.
     lastDateKey = null;
