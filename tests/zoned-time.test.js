@@ -4,17 +4,25 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_TIME_ZONE,
   addDays,
+  canonicalTimeZone,
+  createZonedTimeService,
   dayOfYear,
   daysInMonth,
   daysInYear,
-  getZonedDateTime,
+  getPeriodBounds,
+  getTemporalProgress,
   getUtcOffsetMs,
+  getZonedDateTime,
+  getZonedTimeService,
   isLeapYear,
+  isSameTimeZone,
+  isValidTimeZone,
   isoWeek,
   isoWeekday,
   toZonedIsoString,
   zonedTimeToEpoch,
 } from '../js/zoned-time.js';
+import { DEFAULT_SETTINGS, sanitizeSettings } from '../js/settings.js';
 
 const SP = 'America/Sao_Paulo';
 const sp = (ms) => getZonedDateTime(ms, SP);
@@ -24,7 +32,7 @@ const at = (iso) => Date.parse(iso);
 const pad = (n) => String(n).padStart(2, '0');
 const wall = (dt) => `${dt.dateKey} ${pad(dt.hours)}:${pad(dt.minutes)}:${pad(dt.seconds)}`;
 
-describe(`fixed reference zone (device zone: ${deviceZone})`, () => {
+describe(`São Paulo, the default zone (device zone: ${deviceZone})`, () => {
   test('the default zone is America/Sao_Paulo and snapshots carry their zone', () => {
     assert.equal(DEFAULT_TIME_ZONE, 'America/Sao_Paulo');
     assert.equal(sp(0).timeZone, 'America/Sao_Paulo');
@@ -208,5 +216,184 @@ describe('São Paulo wall time → instant', () => {
   test('historical DST end (2019-02-16): ambiguous hour resolves to the earlier instant', () => {
     assert.equal(zonedTimeToEpoch({ year: 2019, month: 2, day: 16, hours: 23, minutes: 30 }, SP), at('2019-02-17T01:30:00Z'));
     assert.equal(zonedTimeToEpoch({ year: 2019, month: 2, day: 17 }, SP), at('2019-02-17T03:00:00Z'));
+  });
+});
+
+/* ---------------------------------------------------------------------------
+ * Any IANA zone
+ * ------------------------------------------------------------------------ */
+
+const HOUR = 3_600_000;
+const INSTANT = at('2026-10-01T18:25:30.250Z');
+
+// The same instant in the zones the app must support (offsets on that date).
+const SAME_INSTANT = [
+  ['America/Sao_Paulo', '2026-10-01 15:25:30', -180, 4],
+  ['America/New_York', '2026-10-01 14:25:30', -240, 4], // EDT
+  ['America/Los_Angeles', '2026-10-01 11:25:30', -420, 4], // PDT
+  ['Europe/London', '2026-10-01 19:25:30', 60, 4], // BST
+  ['Europe/Paris', '2026-10-01 20:25:30', 120, 4], // CEST
+  ['Asia/Tokyo', '2026-10-02 03:25:30', 540, 5],
+  ['Asia/Kolkata', '2026-10-01 23:55:30', 330, 4],
+  ['Australia/Sydney', '2026-10-02 04:25:30', 600, 5], // AEST (DST starts Oct 4th)
+  ['Asia/Kathmandu', '2026-10-02 00:10:30', 345, 5],
+];
+
+describe(`any IANA zone (device zone: ${deviceZone})`, () => {
+  test('one instant gives each zone its own civil date and time', () => {
+    for (const [zone, expected, offset, weekday] of SAME_INSTANT) {
+      const dt = getZonedDateTime(INSTANT, zone);
+      assert.equal(dt.timeZone, zone);
+      assert.equal(wall(dt), expected, zone);
+      assert.equal(dt.utcOffsetMinutes, offset, zone);
+      assert.equal(dt.isoWeekday, weekday, zone);
+      assert.equal(dt.milliseconds, 250);
+      assert.equal(dt.epochMs, INSTANT, 'the instant itself never changes');
+      // The ISO string with offset points back to exactly the same instant.
+      assert.equal(Date.parse(toZonedIsoString(dt)) + dt.milliseconds, INSTANT, zone);
+    }
+  });
+
+  test('São Paulo is still on Thursday when Tokyo is already on Friday', () => {
+    const saoPaulo = getZonedDateTime(INSTANT, 'America/Sao_Paulo');
+    const tokyo = getZonedDateTime(INSTANT, 'Asia/Tokyo');
+    assert.deepEqual([saoPaulo.dateKey, tokyo.dateKey], ['2026-10-01', '2026-10-02']);
+    assert.deepEqual([saoPaulo.day, tokyo.day], [1, 2]); // day ring
+    assert.deepEqual([saoPaulo.isoWeekday, tokyo.isoWeekday], [4, 5]); // weekday ring
+    assert.deepEqual([saoPaulo.dayOfYear, tokyo.dayOfYear], [274, 275]);
+    assert.deepEqual([saoPaulo.isoWeek, tokyo.isoWeek], [40, 40]);
+
+    const spProgress = getTemporalProgress(saoPaulo);
+    const tokyoProgress = getTemporalProgress(tokyo);
+    assert.ok(Math.abs(spProgress.day - (15 * 3600 + 25 * 60 + 30.25) / 86_400) < 1e-9);
+    assert.ok(Math.abs(tokyoProgress.day - (3 * 3600 + 25 * 60 + 30.25) / 86_400) < 1e-9);
+    assert.ok(tokyoProgress.week > spProgress.week);
+    assert.equal(spProgress.bounds.day.start, at('2026-10-01T03:00:00Z'));
+    assert.equal(tokyoProgress.bounds.day.start, at('2026-10-01T15:00:00Z'));
+  });
+
+  test('switching the setting switches the snapshot immediately (same second, separate caches)', () => {
+    let settings = sanitizeSettings({ ...DEFAULT_SETTINGS });
+    const before = getZonedDateTime(INSTANT, settings.timeZone);
+    settings = sanitizeSettings({ ...settings, timeZone: 'Asia/Tokyo', location: 'tokyo' });
+    const after = getZonedDateTime(INSTANT + 10, settings.timeZone); // same second
+    assert.equal(before.timeZone, 'America/Sao_Paulo');
+    assert.equal(after.timeZone, 'Asia/Tokyo');
+    assert.equal(wall(after), '2026-10-02 03:25:30');
+    assert.equal(settings.theme, DEFAULT_SETTINGS.theme, 'other preferences unchanged');
+    // Alternating zones within one second never leaks a cached snapshot.
+    for (let i = 0; i < 4; i += 1) {
+      assert.equal(getZonedDateTime(INSTANT, 'America/Sao_Paulo').hours, 15);
+      assert.equal(getZonedDateTime(INSTANT, 'Asia/Tokyo').hours, 3);
+    }
+  });
+
+  test('one service per zone; progress refuses a snapshot from another zone', () => {
+    assert.equal(getZonedTimeService('Asia/Tokyo'), getZonedTimeService('Asia/Tokyo'));
+    assert.notEqual(getZonedTimeService('Asia/Tokyo'), getZonedTimeService('America/Sao_Paulo'));
+    const tokyoService = createZonedTimeService('Asia/Tokyo');
+    assert.throws(() => tokyoService.getProgress(getZonedDateTime(INSTANT, 'America/Sao_Paulo')), RangeError);
+    assert.equal(tokyoService.toEpoch({ year: 2026, month: 10, day: 2, hours: 3, minutes: 25, seconds: 30 }), at('2026-10-01T18:25:30Z'));
+  });
+
+  test('unsupported or missing zones are rejected — never replaced by the device zone', () => {
+    for (const zone of ['Mars/Olympus', '', '  ', undefined, null, 42, 'UTC+3']) {
+      assert.equal(isValidTimeZone(zone), false, String(zone));
+    }
+    assert.throws(() => getZonedDateTime(INSTANT, undefined), TypeError);
+    assert.throws(() => getZonedDateTime(INSTANT, 'Mars/Olympus'), RangeError);
+    assert.throws(() => createZonedTimeService(''), TypeError);
+  });
+
+  test('aliases are recognised as the same zone', () => {
+    assert.equal(isSameTimeZone('Asia/Kolkata', 'Asia/Calcutta'), true);
+    assert.equal(isSameTimeZone('Europe/Kyiv', 'Europe/Kiev'), true);
+    assert.equal(isSameTimeZone('UTC', 'Etc/UTC'), true);
+    assert.equal(isSameTimeZone('Asia/Tokyo', 'Asia/Seoul'), false);
+    assert.equal(isSameTimeZone('Asia/Tokyo', 'Mars/Olympus'), false);
+    assert.equal(canonicalTimeZone('Asia/Kolkata'), canonicalTimeZone('Asia/Calcutta'));
+  });
+
+  test('civil time ↔ instant round-trips in every zone', () => {
+    const start = at('2000-01-01T00:00:00Z');
+    const span = at('2040-01-01T00:00:00Z') - start;
+    let seed = 7;
+    const random = () => {
+      seed = (seed * 1_103_515_245 + 12_345) % 2_147_483_648;
+      return seed / 2_147_483_648;
+    };
+    for (const [zone] of SAME_INSTANT) {
+      for (let i = 0; i < 300; i += 1) {
+        const dt = getZonedDateTime(start + Math.floor(random() * span), zone);
+        const back = zonedTimeToEpoch({ ...dt }, zone);
+        assert.equal(wall(getZonedDateTime(back, zone)), wall(dt), zone);
+      }
+    }
+  });
+});
+
+describe('daylight saving time by the real rules of each zone', () => {
+  const dayLength = (zone, iso) => {
+    const { day } = getPeriodBounds(getZonedDateTime(at(iso), zone));
+    return (day.end - day.start) / HOUR;
+  };
+
+  test('New York springs forward on 2026-03-08 (02:00 does not exist)', () => {
+    const zone = 'America/New_York';
+    const before = getZonedDateTime(at('2026-03-08T06:59:59Z'), zone);
+    const after = getZonedDateTime(at('2026-03-08T07:00:00Z'), zone);
+    assert.equal(wall(before), '2026-03-08 01:59:59');
+    assert.equal(before.utcOffsetMinutes, -300);
+    assert.equal(wall(after), '2026-03-08 03:00:00');
+    assert.equal(after.utcOffsetMinutes, -240);
+    assert.equal(zonedTimeToEpoch({ year: 2026, month: 3, day: 8, hours: 2, minutes: 30 }, zone), at('2026-03-08T07:30:00Z'));
+    assert.equal(dayLength(zone, '2026-03-08T16:00:00Z'), 23);
+    assert.equal(dayLength(zone, '2026-03-09T16:00:00Z'), 24);
+    // Noon EDT is 11 hours into a 23-hour day.
+    const noon = getTemporalProgress(getZonedDateTime(at('2026-03-08T16:00:00Z'), zone));
+    assert.ok(Math.abs(noon.day - 11 / 23) < 1e-9);
+  });
+
+  test('New York falls back on 2026-11-01 (01:30 happens twice)', () => {
+    const zone = 'America/New_York';
+    assert.equal(getZonedDateTime(at('2026-11-01T05:59:59Z'), zone).utcOffsetMinutes, -240);
+    const after = getZonedDateTime(at('2026-11-01T06:00:00Z'), zone);
+    assert.equal(wall(after), '2026-11-01 01:00:00');
+    assert.equal(after.utcOffsetMinutes, -300);
+    assert.equal(zonedTimeToEpoch({ year: 2026, month: 11, day: 1, hours: 1, minutes: 30 }, zone),
+      at('2026-11-01T05:30:00Z'), 'ambiguous time resolves to the earlier instant');
+    assert.equal(dayLength(zone, '2026-11-01T17:00:00Z'), 25);
+    const noon = getTemporalProgress(getZonedDateTime(at('2026-11-01T17:00:00Z'), zone));
+    assert.ok(Math.abs(noon.day - 13 / 25) < 1e-9);
+  });
+
+  test('London: GMT → BST on 2026-03-29 and back on 2026-10-25', () => {
+    const zone = 'Europe/London';
+    assert.equal(wall(getZonedDateTime(at('2026-03-29T00:59:59Z'), zone)), '2026-03-29 00:59:59');
+    const bst = getZonedDateTime(at('2026-03-29T01:00:00Z'), zone);
+    assert.equal(wall(bst), '2026-03-29 02:00:00');
+    assert.equal(bst.utcOffsetMinutes, 60);
+    assert.equal(getZonedDateTime(at('2026-10-25T01:00:00Z'), zone).utcOffsetMinutes, 0);
+    assert.equal(dayLength(zone, '2026-03-29T12:00:00Z'), 23);
+    assert.equal(dayLength(zone, '2026-10-25T12:00:00Z'), 25);
+    assert.equal(dayLength(zone, '2026-07-01T12:00:00Z'), 24);
+  });
+
+  test('Sydney starts DST on 2026-10-04 (southern hemisphere)', () => {
+    const zone = 'Australia/Sydney';
+    assert.equal(getZonedDateTime(at('2026-10-03T15:59:59Z'), zone).utcOffsetMinutes, 600);
+    const aedt = getZonedDateTime(at('2026-10-03T16:00:00Z'), zone);
+    assert.equal(wall(aedt), '2026-10-04 03:00:00');
+    assert.equal(aedt.utcOffsetMinutes, 660);
+    assert.equal(dayLength(zone, '2026-10-04T02:00:00Z'), 23);
+  });
+
+  test('zones without DST keep 24-hour days and a constant offset', () => {
+    for (const zone of ['America/Sao_Paulo', 'Asia/Tokyo', 'Asia/Kolkata']) {
+      for (const iso of ['2026-01-15T12:00:00Z', '2026-07-15T12:00:00Z']) {
+        assert.equal(dayLength(zone, iso), 24, `${zone} ${iso}`);
+      }
+      assert.equal(getUtcOffsetMs(at('2026-01-15T12:00:00Z'), zone), getUtcOffsetMs(at('2026-07-15T12:00:00Z'), zone));
+    }
   });
 });

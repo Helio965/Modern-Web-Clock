@@ -45,9 +45,12 @@ describe('hand angles', () => {
     }
   });
 
-  test('angles come from São Paulo time, not the device', () => {
-    const dt = getZonedDateTime(at('2026-10-01T18:00:00Z'), SP); // 15:00 in São Paulo
-    close(getHandAngles(dt).hour, 90);
+  test('angles come from the selected zone, not the device', () => {
+    const instant = at('2026-10-01T18:00:00Z');
+    close(getHandAngles(getZonedDateTime(instant, SP)).hour, 90); // 15:00 in São Paulo
+    close(getHandAngles(getZonedDateTime(instant, 'Asia/Tokyo')).hour, 90); // 03:00 in Tokyo
+    close(getHandAngles(getZonedDateTime(instant, 'America/New_York')).hour, 60); // 14:00 in New York
+    close(getHandAngles(getZonedDateTime(instant, 'Asia/Kolkata')).hour, 345); // 23:30 in New Delhi
   });
 });
 
@@ -85,6 +88,10 @@ describe('time formatting', () => {
     assert.equal(relativeDay('en', 5), 'In 5 days');
     assert.equal(formatUtcOffset(-180), 'UTC−03:00');
     assert.equal(formatUtcOffset(-120), 'UTC−02:00');
+    assert.equal(formatUtcOffset(540), 'UTC+09:00');
+    assert.equal(formatUtcOffset(345), 'UTC+05:45');
+    assert.equal(formatUtcOffset(-210), 'UTC−03:30');
+    assert.equal(formatUtcOffset(0), 'UTC+00:00');
     assert.equal(formatDuration(8 * 3_600_000 + 34 * 60_000 + 30_500), '08:34:30');
     assert.equal(formatPercent('pt', 0.5731), '57,31%');
     assert.equal(formatPercent('en', 0.29), '29.00%');

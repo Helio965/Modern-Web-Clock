@@ -284,10 +284,13 @@ export function getPeriodBounds({ timeZone, year, month, day, isoWeekday: weekda
  * zone has a separate service, switching zones can never reuse a snapshot or
  * boundaries computed for another zone.
  *
- * @param {string} timeZone IANA identifier (validated; RangeError otherwise)
+ * @param {string} timeZone IANA identifier (TypeError when missing, RangeError when unknown)
  */
 export function createZonedTimeService(timeZone) {
-  if (!isValidTimeZone(timeZone)) throw new RangeError(`Unsupported time zone: ${String(timeZone)}`);
+  if (typeof timeZone !== 'string' || timeZone.trim() === '') {
+    throw new TypeError('A non-empty IANA time zone identifier is required.');
+  }
+  if (!isValidTimeZone(timeZone)) throw new RangeError(`Unsupported time zone: ${timeZone}`);
 
   let cachedSecond = Number.NaN;
   let cachedBase = null;
