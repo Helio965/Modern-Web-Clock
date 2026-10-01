@@ -17,6 +17,17 @@ import { AnalogClock, DigitalClock } from './clock.js';
 import { ProgressPanel } from './progress.js';
 import { SettingsPanel, loadSettings } from './settings.js';
 import { applyTranslations, formatTimeString, t } from './i18n.js';
+import {
+  TooltipController,
+  describeDay,
+  describeFace,
+  describeMonth,
+  describeMonthLength,
+  describeProgress,
+  describeWeek,
+  describeWeekday,
+  describeYear,
+} from './tooltip.js';
 
 const HANDS_INTRO_DELAY_MS = 550;
 const HANDS_INTRO_MS = 900;
@@ -37,6 +48,11 @@ const analog = new AnalogClock(
 const digital = new DigitalClock(document.getElementById('digital'));
 const progressPanel = new ProgressPanel(document.getElementById('progress'));
 const simBadge = document.getElementById('sim-badge');
+const tooltips = new TooltipController({
+  element: document.getElementById('tooltip'),
+  liveRegion: document.getElementById('live-region'),
+  getContent: tooltipContent,
+});
 
 let lastDateKey = null;
 let lastSecond = null;
@@ -74,7 +90,33 @@ function renderSecond(now, growth = 1) {
   digital.renderTime(now, timeOptions());
   renderProgress(now, growth);
   renderTitle(now);
+  tooltips.refresh();
   lastSecond = now.epochMs - now.milliseconds;
+}
+
+/** Tooltip text for whatever element is hovered, tapped or explored. */
+function tooltipContent(target) {
+  const now = readNow();
+  const { language } = settings;
+  const { ring } = target.dataset;
+  switch (target.dataset.tip) {
+    case 'ring-item': {
+      const value = Number(target.dataset.index) + 1;
+      if (ring === 'days') return describeDay(now, value, language);
+      if (ring === 'months') return describeMonth(now, value, language);
+      return describeWeekday(now, value, language);
+    }
+    case 'ring-gap':
+      if (ring === 'days') return describeMonthLength(now, language);
+      if (ring === 'months') return describeYear(now, language);
+      return describeWeek(now, language);
+    case 'progress':
+      return describeProgress(target.dataset.progressRow, now, getTemporalProgress(now), language);
+    case 'face':
+      return describeFace(now, language, timeOptions());
+    default:
+      return null;
+  }
 }
 
 function introProgress(timestamp) {
@@ -141,6 +183,7 @@ function startIntro() {
 }
 
 function start() {
+  calendar.enableExploration((node, ring) => tooltips.show(node, 'keyboard', { owner: ring }));
   applySettings();
   new SettingsPanel({
     dialog: document.getElementById('settings'),

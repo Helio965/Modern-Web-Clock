@@ -12,7 +12,7 @@
  * set one CSS transform per ring — nothing is rebuilt per frame.
  */
 
-import { monthShort, t, weekdayShort } from './i18n.js';
+import { formatLongDate, formatMonthYear, monthShort, t, weekdayLong, weekdayShort } from './i18n.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const CENTER = 500;
@@ -54,6 +54,7 @@ class Ring {
     this.geometry = geometry;
     this.count = geometry.slots;
     this.currentIndex = -1;
+    this.inspected = -1;
     this.rotation = 0;
 
     const { radius, band, slots, step, window: windowWidth } = geometry;
@@ -65,9 +66,9 @@ class Ring {
     svg('circle', { class: 'ring__edge', cx: CENTER, cy: CENTER, r: radius - band / 2 }, this.group);
 
     // Unused slots (e.g. days 29–31 in February) form a lighter gap segment.
-    this.gapRotor = svg('g', { class: 'ring__rotor' }, this.group);
-    this.gapArc = svg('path', { class: 'ring__gap', 'stroke-width': band - 16 }, this.gapRotor);
-    this.gapLabelHolder = svg('g', { class: 'ring__gap-holder', 'data-ring': name, 'data-gap': 'true' }, this.gapRotor);
+    this.gapRotor = svg('g', { class: 'ring__rotor', 'aria-hidden': 'true' }, this.group);
+    this.gapLabelHolder = svg('g', { class: 'ring__gap-holder', 'data-ring': name, 'data-tip': 'ring-gap' }, this.gapRotor);
+    this.gapArc = svg('path', { class: 'ring__gap', 'stroke-width': band - 16 }, this.gapLabelHolder);
     this.gapHit = svg('path', { class: 'ring__gap-hit', 'stroke-width': band - 8 }, this.gapLabelHolder);
     this.gapLabel = svg('text', { class: 'ring__gap-label', x: CENTER, y: CENTER - radius }, this.gapLabelHolder);
 
@@ -81,7 +82,7 @@ class Ring {
       rx: windowHeight / 2,
     }, this.group);
 
-    this.itemRotor = svg('g', { class: 'ring__rotor' }, this.group);
+    this.itemRotor = svg('g', { class: 'ring__rotor', 'aria-hidden': 'true' }, this.group);
     this.items = [];
     const hitWidth = ((2 * Math.PI * radius) / 360) * step * 0.92;
     for (let index = 0; index < slots; index += 1) {
@@ -90,6 +91,7 @@ class Ring {
         transform: `rotate(${index * step} ${CENTER} ${CENTER})`,
         'data-ring': name,
         'data-index': index,
+        'data-tip': 'ring-item',
       }, this.itemRotor);
       svg('rect', {
         class: 'ring__hit',
@@ -97,6 +99,7 @@ class Ring {
         y: CENTER - radius - (band - 8) / 2,
         width: hitWidth,
         height: band - 8,
+        rx: 14,
       }, item);
       const label = svg('text', { class: 'ring__label', x: CENTER, y: CENTER - radius }, item);
       this.items.push({ node: item, label });
@@ -162,6 +165,25 @@ class Ring {
     this.currentIndex = index;
   }
 
+  /**
+   * Keyboard exploration: positions 0..count-1 are the items, position
+   * `count` is the gap (month length / year / ISO week). Wraps around.
+   * Returns the element to describe.
+   */
+  inspect(position) {
+    const stops = this.count + 1;
+    this.inspected = ((position % stops) + stops) % stops;
+    this.items.forEach((item, i) => item.node.classList.toggle('is-inspected', i === this.inspected));
+    this.gapLabelHolder.classList.toggle('is-inspected', this.inspected === this.count);
+    return this.inspected === this.count ? this.gapLabelHolder : this.items[this.inspected].node;
+  }
+
+  clearInspection() {
+    this.inspected = -1;
+    this.items.forEach((item) => item.node.classList.remove('is-inspected'));
+    this.gapLabelHolder.classList.remove('is-inspected');
+  }
+
   /** Temporarily offsets the ring (used by the opening animation). */
   setRotationOffset(offsetDeg) {
     const transform = `rotate(${this.rotation + offsetDeg}deg)`;
@@ -195,10 +217,47 @@ export class CalendarRings {
     if (this.dateTime) this.updateGapLabels(this.dateTime);
   }
 
+  /**
+   * Makes each ring focusable; arrows / Home / End move through its items.
+   * @param {(node: Element, ring: Element) => void} onInspect
+   */
+  enableExploration(onInspect) {
+    const moves = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+    for (const ring of Object.values(this.rings)) {
+      ring.group.setAttribute('tabindex', '0');
+      ring.group.setAttribute('role', 'group');
+      ring.group.addEventListener('focus', () => {
+        // Mouse clicks also focus the ring; only keyboard focus starts exploring.
+        if (ring.group.matches(':focus-visible')) onInspect(ring.inspect(ring.currentIndex), ring.group);
+      });
+      ring.group.addEventListener('blur', () => ring.clearInspection());
+      ring.group.addEventListener('keydown', (event) => {
+        let next;
+        if (event.key in moves) next = ring.inspected + moves[event.key];
+        else if (event.key === 'Home') next = 0;
+        else if (event.key === 'End') next = ring.count - 1;
+        else return;
+        event.preventDefault();
+        onInspect(ring.inspect(next), ring.group);
+      });
+    }
+  }
+
+  updateAccessibleLabels(dateTime) {
+    const hint = t(this.language, 'ringHint');
+    const labels = {
+      days: `${t(this.language, 'ringDays')}: ${formatLongDate(this.language, dateTime)}. ${hint}`,
+      months: `${t(this.language, 'ringMonths')}: ${formatMonthYear(this.language, dateTime.year, dateTime.month)}. ${hint}`,
+      weekdays: `${t(this.language, 'ringWeekdays')}: ${weekdayLong(this.language, dateTime.isoWeekday)}. ${hint}`,
+    };
+    for (const [name, label] of Object.entries(labels)) this.rings[name].group.setAttribute('aria-label', label);
+  }
+
   updateGapLabels(dateTime) {
     this.rings.days.setGapLabel(t(this.language, 'daysUnit', dateTime.daysInMonth));
     this.rings.months.setGapLabel(String(dateTime.year));
     this.rings.weekdays.setGapLabel(t(this.language, 'weekShort', dateTime.isoWeek));
+    this.updateAccessibleLabels(dateTime);
   }
 
   /**

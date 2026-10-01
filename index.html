@@ -50,7 +50,8 @@
 
     <main class="stage" id="main">
       <figure class="clock" id="clock">
-        <svg class="clock__dial" id="clock-dial" viewBox="0 0 1000 1000">
+        <svg class="clock__dial" id="clock-dial" viewBox="0 0 1000 1000" role="group"
+          aria-label="Relógio circular no horário de São Paulo" data-i18n-aria-label="clockLabel">
           <defs>
             <radialGradient id="face-gradient" cx="50%" cy="38%" r="65%">
               <stop class="face-stop--hi" offset="0%"/>
@@ -60,7 +61,7 @@
           <circle class="clock__bezel" cx="500" cy="500" r="496"/>
           <path class="clock__marker" d="M491 7 h18 l-9 11 z"/>
           <g class="clock__rings" id="clock-rings"></g>
-          <circle class="clock__face" cx="500" cy="500" r="238"/>
+          <circle class="clock__face" cx="500" cy="500" r="238" data-tip="face"/>
           <g class="clock__face-details" id="clock-face-details" aria-hidden="true"></g>
         </svg>
 
@@ -109,25 +110,25 @@
         <div class="progress-body">
           <svg class="progress-rings" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-progress="rings"></svg>
           <div class="progress-legend">
-          <div class="progress-row progress-row--day" data-progress-row="day" role="progressbar" aria-valuemin="0" aria-valuemax="100" data-i18n-aria-label="progressDayLong" aria-label="Progresso do dia">
+          <div class="progress-row progress-row--day" data-progress-row="day" role="progressbar" aria-valuemin="0" aria-valuemax="100" tabindex="0" data-tip="progress" data-i18n-aria-label="progressDayLong" aria-label="Progresso do dia">
             <span class="progress-row__dot" aria-hidden="true"></span>
             <span class="progress-row__label" data-i18n="progressDay">Dia</span>
             <span class="progress-row__value" data-progress-value>0,00%</span>
             <span class="progress-row__detail" data-progress-detail></span>
           </div>
-          <div class="progress-row progress-row--week" data-progress-row="week" role="progressbar" aria-valuemin="0" aria-valuemax="100" data-i18n-aria-label="progressWeekLong" aria-label="Progresso da semana">
+          <div class="progress-row progress-row--week" data-progress-row="week" role="progressbar" aria-valuemin="0" aria-valuemax="100" tabindex="0" data-tip="progress" data-i18n-aria-label="progressWeekLong" aria-label="Progresso da semana">
             <span class="progress-row__dot" aria-hidden="true"></span>
             <span class="progress-row__label" data-i18n="progressWeek">Semana</span>
             <span class="progress-row__value" data-progress-value>0,00%</span>
             <span class="progress-row__detail" data-progress-detail></span>
           </div>
-          <div class="progress-row progress-row--month" data-progress-row="month" role="progressbar" aria-valuemin="0" aria-valuemax="100" data-i18n-aria-label="progressMonthLong" aria-label="Progresso do mês">
+          <div class="progress-row progress-row--month" data-progress-row="month" role="progressbar" aria-valuemin="0" aria-valuemax="100" tabindex="0" data-tip="progress" data-i18n-aria-label="progressMonthLong" aria-label="Progresso do mês">
             <span class="progress-row__dot" aria-hidden="true"></span>
             <span class="progress-row__label" data-i18n="progressMonth">Mês</span>
             <span class="progress-row__value" data-progress-value>0,00%</span>
             <span class="progress-row__detail" data-progress-detail></span>
           </div>
-          <div class="progress-row progress-row--year" data-progress-row="year" role="progressbar" aria-valuemin="0" aria-valuemax="100" data-i18n-aria-label="progressYearLong" aria-label="Progresso do ano">
+          <div class="progress-row progress-row--year" data-progress-row="year" role="progressbar" aria-valuemin="0" aria-valuemax="100" tabindex="0" data-tip="progress" data-i18n-aria-label="progressYearLong" aria-label="Progresso do ano">
             <span class="progress-row__dot" aria-hidden="true"></span>
             <span class="progress-row__label" data-i18n="progressYear">Ano</span>
             <span class="progress-row__value" data-progress-value>0,00%</span>
@@ -201,6 +202,9 @@
       </div>
     </form>
   </dialog>
+
+  <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+  <div class="sr-only" id="live-region" aria-live="polite"></div>
 
   <noscript>
     <p class="noscript">Este relógio precisa de JavaScript para calcular o horário de São Paulo.</p>

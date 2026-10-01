@@ -26,7 +26,7 @@ export function timeUntilMidnight(dateTime, progress) {
 }
 
 /** Short contextual line shown under each percentage. */
-export function describeProgress(key, dateTime, progress, language) {
+export function progressDetail(key, dateTime, progress, language) {
   switch (key) {
     case 'day':
       return t(language, 'timeLeft', timeUntilMidnight(dateTime, progress));
@@ -89,7 +89,7 @@ export class ProgressPanel {
       const { row, value, detail } = this.rows[key];
       const text = formatPercent(language, fraction);
       if (value.textContent !== text) value.textContent = text;
-      const description = describeProgress(key, dateTime, progress, language);
+      const description = progressDetail(key, dateTime, progress, language);
       if (detail.textContent !== description) detail.textContent = description;
       row.setAttribute('aria-valuenow', (fraction * 100).toFixed(2));
       row.setAttribute('aria-valuetext', text);
