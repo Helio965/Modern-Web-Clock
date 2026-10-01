@@ -1,0 +1,238 @@
+/* ==========================================================================
+   Modern Circular Clock — base styles
+   Design tokens, themes, page layout and shared components.
+   ========================================================================== */
+
+/* ---------- Design tokens (dark theme is the default) ---------- */
+:root {
+  color-scheme: dark;
+
+  --bg: #0a0b0d;
+  --bg-glow: #171a1f;
+  --surface: rgb(255 255 255 / 0.025);
+  --surface-strong: rgb(255 255 255 / 0.05);
+  --surface-border: rgb(255 255 255 / 0.075);
+  --text: #e8eaed;
+  --text-muted: #9aa0a8;
+  --text-faint: #737a84;
+
+  --bezel: #121418;
+  --bezel-edge: rgb(255 255 255 / 0.08);
+  --ring: #181b20;
+  --ring-edge: rgb(255 255 255 / 0.05);
+  --ring-gap: #23272e;
+  --ring-label: #7d848e;
+  --face: #0e1013;
+  --face-hi: #181b21;
+  --tick: rgb(255 255 255 / 0.32);
+  --tick-minor: rgb(255 255 255 / 0.12);
+  --hand: #f1f2f4;
+  --shadow: rgb(0 0 0 / 0.55);
+
+  --accent-day: #ff5470;
+  --accent-month: #4f8cff;
+  --accent-week: #34d17f;
+  --accent-year: #d4b06a;
+  --focus: #f5f7fa;
+
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --radius-pill: 999px;
+  --pad: clamp(16px, 2.6vw, 40px);
+  --gap: clamp(16px, 2.4vw, 40px);
+  --topbar-h: 64px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #e7eaee;
+  --bg-glow: #f9fafb;
+  --surface: rgb(255 255 255 / 0.6);
+  --surface-strong: rgb(255 255 255 / 0.85);
+  --surface-border: rgb(15 20 30 / 0.09);
+  --text: #14171b;
+  --text-muted: #4f5660;
+  --text-faint: #646b75;
+
+  --bezel: #f6f7f9;
+  --bezel-edge: rgb(15 20 30 / 0.1);
+  --ring: #eceff3;
+  --ring-edge: rgb(15 20 30 / 0.06);
+  --ring-gap: #d8dde4;
+  --ring-label: #59606a;
+  --face: #fbfcfd;
+  --face-hi: #ffffff;
+  --tick: rgb(15 20 30 / 0.5);
+  --tick-minor: rgb(15 20 30 / 0.2);
+  --hand: #16191d;
+  --shadow: rgb(30 40 60 / 0.22);
+
+  --accent-day: #e11d48;
+  --accent-month: #2563eb;
+  --accent-week: #15803d;
+  --accent-year: #a16207;
+  --focus: #14171b;
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--bg);
+  background-image: radial-gradient(ellipse 80% 70% at 50% 45%, var(--bg-glow) 0%, var(--bg) 70%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+p,
+h1,
+h2,
+h3,
+figure,
+ul {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* ---------- App shell ---------- */
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--topbar-h);
+  padding: 10px var(--pad);
+  padding-top: max(10px, env(safe-area-inset-top));
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--text);
+}
+
+.brand__mark {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+
+.brand__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zone-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 6px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.zone-chip__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-week);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-week) 22%, transparent);
+}
+
+/* ---------- Stage layout (mobile first; see responsive.css) ---------- */
+.stage {
+  --clock-size: max(260px, min(calc(100vw - 2 * var(--pad)), calc(100dvh - var(--topbar-h) - 2 * var(--pad)), 760px));
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "clock"
+    "digital"
+    "progress";
+  justify-items: center;
+  align-content: center;
+  gap: var(--gap);
+  padding: 0 var(--pad) var(--pad);
+  padding-bottom: max(var(--pad), env(safe-area-inset-bottom));
+}
+
+.clock {
+  grid-area: clock;
+  position: relative;
+  width: var(--clock-size);
+  aspect-ratio: 1;
+}
+
+.noscript {
+  max-width: 32rem;
+  margin: 2rem auto;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  text-align: center;
+}

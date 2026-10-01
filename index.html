@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Relógio e calendário circular com anéis concêntricos, sempre no horário de São Paulo — Brasil (America/Sao_Paulo).">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0a0b0d">
+  <title>Modern Circular Clock — São Paulo</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand__mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".35"/>
+          <circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".6"/>
+          <circle cx="12" cy="12" r="1.8" fill="currentColor"/>
+        </svg>
+        <span class="brand__name">Modern Circular Clock</span>
+      </div>
+
+      <p class="zone-chip">
+        <span class="zone-chip__dot" aria-hidden="true"></span>
+        <span>São Paulo — Brasil</span>
+      </p>
+    </header>
+
+    <main class="stage" id="main">
+      <figure class="clock" id="clock"></figure>
+    </main>
+  </div>
+
+  <noscript>
+    <p class="noscript">Este relógio precisa de JavaScript para calcular o horário de São Paulo.</p>
+  </noscript>
+</body>
+</html>
