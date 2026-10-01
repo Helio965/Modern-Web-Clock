@@ -1,8 +1,9 @@
 /**
  * Contextual tooltips for rings, progress rows and the clock face.
  *
- * The describe*() functions are pure: they turn a São Paulo snapshot into
- * { title, lines, accent } and are unit tested. TooltipController handles
+ * The describe*() functions are pure: they turn a zoned snapshot (plus the
+ * display name of its location) into { title, lines, accent } and are unit
+ * tested. All dates are those of the snapshot's own time zone. TooltipController handles
  * mouse hover, touch (tap to show, auto-hide) and keyboard exploration, and
  * mirrors keyboard-driven content into an aria-live region.
  */
@@ -26,18 +27,21 @@ import { timeUntilMidnight } from './progress.js';
  * Content builders
  * ------------------------------------------------------------------------ */
 
-/** Any day of the current São Paulo month (day = 1..31). */
-export function describeDay(dateTime, day, language) {
+/**
+ * Any day of the current month (day = 1..31).
+ * @param {string} [placeLabel] location name, e.g. "Tóquio — Japão"
+ */
+export function describeDay(dateTime, day, language, placeLabel = dateTime.timeZone) {
   const date = { year: dateTime.year, month: dateTime.month, day };
   const weekday = weekdayLong(language, isoWeekday(date.year, date.month, date.day));
   return {
     title: formatLongDate(language, date),
-    lines: [`${weekday} · ${relativeDay(language, daysBetween(dateTime, date))}`, t(language, 'location')],
+    lines: [`${weekday} · ${relativeDay(language, daysBetween(dateTime, date))}`, placeLabel],
     accent: 'day',
   };
 }
 
-/** Any month of the current São Paulo year (month = 1..12). */
+/** Any month of the current year (month = 1..12). */
 export function describeMonth(dateTime, month, language) {
   const diff = month - dateTime.month;
   let relative = t(language, 'currentMonth');
@@ -103,7 +107,7 @@ const PROGRESS_TITLES = {
   year: 'progressYearLong',
 };
 
-export function describeProgress(key, dateTime, progress, language) {
+export function describeProgress(key, dateTime, progress, language, placeLabel = dateTime.timeZone) {
   const linesByKey = {
     day: [t(language, 'untilMidnight', timeUntilMidnight(dateTime, progress))],
     week: [t(language, 'weekdayOfWeek', weekdayLong(language, dateTime.isoWeekday), dateTime.isoWeekday)],
@@ -118,15 +122,19 @@ export function describeProgress(key, dateTime, progress, language) {
   };
   return {
     title: `${t(language, PROGRESS_TITLES[key])} · ${formatPercent(language, progress[key], 4)}`,
-    lines: [...linesByKey[key], t(language, 'location')],
+    lines: [...linesByKey[key], placeLabel],
     accent: key,
   };
 }
 
-export function describeFace(dateTime, language, { hour12 = false } = {}) {
+/**
+ * The clock face: current time of the selected location.
+ * @param {{ hour12?: boolean, placeName?: string }} [options] placeName: short name ("Tóquio")
+ */
+export function describeFace(dateTime, language, { hour12 = false, placeName = dateTime.timeZone } = {}) {
   return {
     title: formatTimeString(dateTime, { hour12, showSeconds: true }),
-    lines: [t(language, 'spTime'), `America/Sao_Paulo · ${formatUtcOffset(dateTime.utcOffsetMinutes)}`],
+    lines: [t(language, 'timeIn', placeName), `${dateTime.timeZone} · ${formatUtcOffset(dateTime.utcOffsetMinutes)}`],
     accent: 'neutral',
   };
 }

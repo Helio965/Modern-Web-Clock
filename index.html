@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Relógio e calendário circular com anéis concêntricos, sempre no horário de São Paulo — Brasil (America/Sao_Paulo).">
+  <meta name="description" content="Relógio e calendário circular com anéis concêntricos no horário da localização escolhida — São Paulo, Tóquio, Nova York ou qualquer fuso IANA.">
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#0a0b0d">
-  <title>Modern Circular Clock — São Paulo</title>
+  <title>Modern Circular Clock</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/clock.css">
@@ -18,13 +18,27 @@
       if (saved && saved.theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
     } catch (error) { /* storage unavailable: keep the dark default */ }
 
-    // The whole app depends on the browser resolving America/Sao_Paulo. If it
-    // cannot, show a message instead of silently using another time zone.
-    try {
-      new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo' }).format(0);
-    } catch (error) {
-      document.documentElement.classList.add('no-timezone');
-    }
+    // The clock needs IANA time zones in Intl. The app validates the saved
+    // zone (falling back to the default); if the engine cannot resolve either,
+    // show a message instead of silently using the device time zone.
+    (function () {
+      function supports(zone) {
+        try {
+          new Intl.DateTimeFormat('en-US', { timeZone: zone }).format(0);
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+      var stored = null;
+      try {
+        var raw = JSON.parse(localStorage.getItem('modern-circular-clock:settings') || 'null');
+        stored = raw && typeof raw.timeZone === 'string' ? raw.timeZone : null;
+      } catch (error) { /* no saved zone */ }
+      if (!(stored && supports(stored)) && !supports('America/Sao_Paulo')) {
+        document.documentElement.classList.add('no-timezone');
+      }
+    })();
   </script>
   <script type="module" src="js/app.js"></script>
 </head>
@@ -44,7 +58,7 @@
 
       <p class="zone-chip">
         <span class="zone-chip__dot" aria-hidden="true"></span>
-        <span data-i18n="location">São Paulo — Brasil</span>
+        <span class="zone-chip__name" data-location="medium">São Paulo — Brasil</span>
       </p>
 
       <button class="icon-button" id="settings-open" type="button" aria-haspopup="dialog" aria-controls="settings"
@@ -58,14 +72,16 @@
     </header>
 
     <p class="zone-error" role="alert">
-      <span lang="pt-BR">Este navegador não consegue calcular o fuso America/Sao_Paulo. Atualize o navegador para usar o relógio.</span>
-      <span lang="en">This browser cannot compute the America/Sao_Paulo time zone. Please update your browser to use the clock.</span>
+      <span lang="pt-BR">Este navegador não consegue calcular fusos horários IANA. Atualize o navegador para usar o relógio.</span>
+      <span lang="en">This browser cannot compute IANA time zones. Please update your browser to use the clock.</span>
     </p>
+
+    <p class="notice" id="notice" role="status" hidden></p>
 
     <main class="stage" id="main">
       <figure class="clock" id="clock">
         <svg class="clock__dial" id="clock-dial" viewBox="0 0 1000 1000" role="group"
-          aria-label="Relógio circular no horário de São Paulo" data-i18n-aria-label="clockLabel">
+          aria-label="Relógio circular no horário de São Paulo">
           <defs>
             <radialGradient id="face-gradient" cx="50%" cy="38%" r="65%">
               <stop class="face-stop--hi" offset="0%"/>
@@ -103,7 +119,7 @@
       </figure>
 
       <section class="panel panel--digital" id="digital" aria-labelledby="digital-title">
-        <p class="eyebrow" id="digital-title" data-i18n="spTime">Horário de São Paulo</p>
+        <p class="eyebrow" id="digital-title" data-location="time-in">Horário de São Paulo</p>
         <p class="digital-time">
           <time data-digital="time" datetime=""><span data-digital="hm">--:--</span><span class="digital-time__seconds" data-digital="seconds">:--</span><span class="digital-time__period" data-digital="period" hidden></span></time>
         </p>
@@ -114,8 +130,8 @@
         </p>
         <p class="digital-weekday" data-digital="weekday">&nbsp;</p>
         <p class="digital-zone">
-          <span class="digital-zone__name" data-i18n="location">São Paulo — Brasil</span>
-          <span class="digital-zone__id">America/Sao_Paulo · <span data-digital="offset">UTC</span></span>
+          <span class="digital-zone__name" data-location="full">São Paulo — Brasil</span>
+          <span class="digital-zone__id"><span data-location="zone">America/Sao_Paulo</span> · <span data-digital="offset">UTC</span></span>
         </p>
       </section>
 
@@ -201,18 +217,16 @@
         </div>
       </fieldset>
 
-      <div class="setting setting--fixed">
-        <p class="setting__label" data-i18n="zone">Fuso</p>
-        <p class="setting__fixed">
-          <svg class="setting__lock" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/>
-            <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="1.7"/>
-          </svg>
-          <span data-i18n="location">São Paulo — Brasil</span>
-          <span class="setting__badge" data-i18n="zoneFixed">Fixo</span>
-        </p>
-        <p class="setting__zone-id">America/Sao_Paulo</p>
-        <p class="setting__note" data-i18n="zoneNote">O instante atual vem do relógio do dispositivo e é sempre convertido para America/Sao_Paulo. O fuso não é configurável.</p>
+      <div class="setting setting--location">
+        <p class="setting__label" data-i18n="locationTitle">Localização</p>
+        <div class="location-card">
+          <span class="location-card__dot" aria-hidden="true"></span>
+          <span class="location-card__text">
+            <span class="location-card__name" data-location="full">São Paulo — Brasil</span>
+            <span class="location-card__zone"><span data-location="zone">America/Sao_Paulo</span> · <span data-utc-offset>UTC</span></span>
+          </span>
+        </div>
+        <p class="setting__note" data-i18n="zoneNote">O instante vem do relógio do dispositivo e é convertido para o fuso da localização escolhida; offsets e horário de verão vêm do navegador.</p>
       </div>
     </form>
   </dialog>
@@ -221,7 +235,7 @@
   <div class="sr-only" id="live-region" aria-live="polite"></div>
 
   <noscript>
-    <p class="noscript">Este relógio precisa de JavaScript para calcular o horário de São Paulo.</p>
+    <p class="noscript">Este relógio precisa de JavaScript para calcular o horário da localização selecionada.</p>
   </noscript>
 </body>
 </html>

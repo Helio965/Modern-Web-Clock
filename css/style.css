@@ -191,9 +191,10 @@ input {
 }
 
 /* ---------- App shell ---------- */
+/* Column: header, optional notices, then the stage filling the rest. */
 .app {
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
 }
@@ -232,7 +233,8 @@ input {
 }
 
 .zone-chip {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -245,6 +247,12 @@ input {
   font-size: 0.78rem;
   letter-spacing: 0.04em;
   white-space: nowrap;
+}
+
+.zone-chip__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .zone-chip__dot {
@@ -260,6 +268,7 @@ input {
   --clock-size: max(260px, min(calc(100vw - 2 * var(--pad)), calc(100dvh - var(--topbar-h) - 2 * var(--pad)), 760px));
 
   display: grid;
+  flex: 1 0 auto;
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
     "clock"
@@ -279,7 +288,7 @@ input {
   aspect-ratio: 1;
 }
 
-/* Shown only when the browser cannot resolve America/Sao_Paulo (see index.html). */
+/* Shown only when the browser cannot resolve IANA time zones (see index.html). */
 .zone-error {
   display: none;
 }
@@ -403,6 +412,7 @@ input {
 }
 
 .digital-zone__id {
+  overflow-wrap: anywhere;
   color: var(--text-faint);
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -705,41 +715,47 @@ input {
   outline-offset: 1px;
 }
 
-.setting--fixed {
-  padding: 14px 16px;
+.location-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
   border: 1px solid var(--surface-border);
   border-radius: 14px;
   background: var(--surface);
+  text-align: left;
 }
 
-.setting__fixed {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+.location-card__dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent-week);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-week) 22%, transparent);
+}
+
+.location-card__text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.location-card__name {
+  color: var(--text);
   font-size: 0.95rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
-.setting__lock {
-  width: 17px;
-  height: 17px;
-  color: var(--text-muted);
-}
-
-.setting__badge {
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--surface-strong);
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.setting__zone-id {
+.location-card__zone {
   color: var(--text-faint);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
 }
 
 .setting__note {
@@ -816,4 +832,17 @@ input {
 
 .tooltip__line {
   display: block;
+}
+
+/* ---------- Notice (e.g. a saved time zone this browser does not support) ---------- */
+.notice {
+  max-width: min(40rem, calc(100% - 2 * var(--pad)));
+  margin: 0 auto 12px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent-year) 55%, transparent);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
 }
