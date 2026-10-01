@@ -262,6 +262,11 @@
   transition: opacity 0.4s ease;
 }
 
+.hide-seconds .hand--second,
+.hide-seconds .hand-cap--second {
+  opacity: 0;
+}
+
 /* ---------- Opening animation ---------- */
 .is-intro .clock {
   animation: clock-enter 0.9s var(--ease-out) both;

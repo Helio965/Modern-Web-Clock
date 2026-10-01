@@ -7,6 +7,7 @@
  *   - every frame:  analog hands (smooth motion)
  *   - every second: digital time and progress indicators
  *   - every date:   calendar rings and the date readout
+ * Settings changes re-render only what they affect.
  */
 
 import { getSaoPauloDateTime, getTemporalProgress } from './sao-paulo-time.js';
@@ -14,19 +15,18 @@ import { createTimeSource, parseSimulation } from './time-source.js';
 import { CalendarRings } from './calendar.js';
 import { AnalogClock, DigitalClock } from './clock.js';
 import { ProgressPanel } from './progress.js';
+import { SettingsPanel, loadSettings } from './settings.js';
+import { applyTranslations, formatTimeString, t } from './i18n.js';
 
 const HANDS_INTRO_DELAY_MS = 550;
 const HANDS_INTRO_MS = 900;
 const INTRO_TOTAL_MS = 1700;
+const THEME_COLORS = { dark: '#0a0b0d', light: '#e7eaee' };
 
 const root = document.documentElement;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-const state = {
-  language: 'pt',
-  hour12: false,
-  showSeconds: true,
-};
+let settings = loadSettings();
 
 const timeSource = createTimeSource(parseSimulation(window.location.search));
 const calendar = new CalendarRings(document.getElementById('clock-rings'));
@@ -36,26 +36,44 @@ const analog = new AnalogClock(
 );
 const digital = new DigitalClock(document.getElementById('digital'));
 const progressPanel = new ProgressPanel(document.getElementById('progress'));
+const simBadge = document.getElementById('sim-badge');
 
 let lastDateKey = null;
 let lastSecond = null;
+let lastTitle = '';
 let introStart = 0;
 let introRunning = false;
 
+const easeOutCubic = (x) => 1 - (1 - x) ** 3;
+const readNow = () => getSaoPauloDateTime(timeSource.now());
+const timeOptions = () => ({ hour12: settings.hourFormat === '12', showSeconds: settings.showSeconds });
+
+/* ---------- Rendering ---------- */
+
 function renderDate(now) {
   calendar.update(now, { animate: lastDateKey !== null });
-  digital.renderDate(now, state.language);
+  digital.renderDate(now, settings.language);
   analog.setFaceLabels('SÃO PAULO', now.utcOffsetMinutes);
   lastDateKey = now.dateKey;
 }
 
 function renderProgress(now, growth = 1) {
-  progressPanel.render(now, getTemporalProgress(now), state.language, growth);
+  if (!settings.showProgress) return;
+  progressPanel.render(now, getTemporalProgress(now), settings.language, growth);
+}
+
+function renderTitle(now) {
+  const title = `${formatTimeString(now, { ...timeOptions(), showSeconds: false })} · São Paulo — Modern Circular Clock`;
+  if (title !== lastTitle) {
+    document.title = title;
+    lastTitle = title;
+  }
 }
 
 function renderSecond(now, growth = 1) {
-  digital.renderTime(now, state);
+  digital.renderTime(now, timeOptions());
   renderProgress(now, growth);
+  renderTitle(now);
   lastSecond = now.epochMs - now.milliseconds;
 }
 
@@ -64,10 +82,8 @@ function introProgress(timestamp) {
   return Math.min(1, Math.max(0, (timestamp - introStart - HANDS_INTRO_DELAY_MS) / HANDS_INTRO_MS));
 }
 
-const easeOutCubic = (x) => 1 - (1 - x) ** 3;
-
 function frame(timestamp) {
-  const now = getSaoPauloDateTime(timeSource.now());
+  const now = readNow();
   const intro = introProgress(timestamp);
   const growth = intro < 1 ? easeOutCubic(intro) : 1;
 
@@ -78,6 +94,36 @@ function frame(timestamp) {
 
   window.requestAnimationFrame(frame);
 }
+
+/* ---------- Settings ---------- */
+
+function renderSimulationBadge() {
+  if (!timeSource.simulated) return;
+  const speed = timeSource.speed === 1 ? '' : ` · ${timeSource.speed}×`;
+  simBadge.textContent = `${t(settings.language, 'simulation')} · ${timeSource.label}${speed}`;
+  simBadge.hidden = false;
+}
+
+function applySettings(changedKey = null) {
+  root.dataset.theme = settings.theme;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLORS[settings.theme]);
+  root.classList.toggle('hide-seconds', !settings.showSeconds);
+  root.classList.toggle('hide-progress', !settings.showProgress);
+
+  if (changedKey === null || changedKey === 'language') {
+    applyTranslations(document, settings.language);
+    calendar.setLanguage(settings.language);
+    renderSimulationBadge();
+  }
+
+  if (changedKey !== null) {
+    const now = readNow();
+    if (changedKey === 'language') digital.renderDate(now, settings.language);
+    renderSecond(now);
+  }
+}
+
+/* ---------- Start ---------- */
 
 function startIntro() {
   root.classList.remove('is-booting');
@@ -95,8 +141,18 @@ function startIntro() {
 }
 
 function start() {
-  calendar.setLanguage(state.language);
-  const now = getSaoPauloDateTime(timeSource.now());
+  applySettings();
+  new SettingsPanel({
+    dialog: document.getElementById('settings'),
+    openButton: document.getElementById('settings-open'),
+    settings,
+    onChange: (next, key) => {
+      settings = next;
+      applySettings(key);
+    },
+  });
+
+  const now = readNow();
   renderDate(now);
   startIntro();
   renderSecond(now, introRunning ? 0 : 1);

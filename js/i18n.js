@@ -268,3 +268,18 @@ export function formatPercent(language, fraction, digits = 2) {
   const factor = 10 ** (digits + 2);
   return percentFormatters.get(key).format(Math.floor(fraction * factor + 1e-6) / factor);
 }
+
+/**
+ * Translates static markup: [data-i18n] sets text, [data-i18n-aria-label]
+ * sets aria-label. Also updates <html lang>.
+ */
+export function applyTranslations(root, language) {
+  const { locale } = getDictionary(language);
+  document.documentElement.lang = locale;
+  for (const node of root.querySelectorAll('[data-i18n]')) {
+    node.textContent = t(language, node.dataset.i18n);
+  }
+  for (const node of root.querySelectorAll('[data-i18n-aria-label]')) {
+    node.setAttribute('aria-label', t(language, node.dataset.i18nAriaLabel));
+  }
+}
