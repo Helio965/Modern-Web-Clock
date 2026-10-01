@@ -1,0 +1,198 @@
+/* ==========================================================================
+   Circular clock: dial, calendar rings, face and hands.
+   SVG user units: the dial is drawn on a 1000 × 1000 viewBox.
+   ========================================================================== */
+
+.clock::before {
+  /* Static soft shadow kept outside the SVG so animating hands never repaint it. */
+  content: "";
+  position: absolute;
+  inset: 1.2%;
+  border-radius: 50%;
+  box-shadow:
+    0 40px 90px -30px var(--shadow),
+    0 12px 32px -12px var(--shadow);
+}
+
+.clock__dial,
+.clock__hands {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.clock__hands {
+  pointer-events: none;
+}
+
+.clock__bezel {
+  fill: var(--bezel);
+  stroke: var(--bezel-edge);
+  stroke-width: 2;
+}
+
+.clock__marker {
+  fill: var(--text-faint);
+}
+
+.face-stop--hi {
+  stop-color: var(--face-hi);
+}
+
+.face-stop--lo {
+  stop-color: var(--face);
+}
+
+.clock__face {
+  fill: url(#face-gradient);
+  stroke: var(--ring-edge);
+  stroke-width: 2;
+}
+
+/* ---------- Rings ---------- */
+.ring--days {
+  --accent: var(--accent-day);
+}
+
+.ring--months {
+  --accent: var(--accent-month);
+}
+
+.ring--weekdays {
+  --accent: var(--accent-week);
+}
+
+.ring__band {
+  fill: none;
+  stroke: var(--ring);
+}
+
+.ring__edge {
+  fill: none;
+  stroke: var(--ring-edge);
+  stroke-width: 1.5;
+}
+
+.ring__rotor {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  transition: transform 1s var(--ease-out);
+}
+
+.is-instant .ring__rotor {
+  transition: none !important;
+}
+
+.is-entering .ring__rotor {
+  transition-duration: 1.35s;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.is-entering .ring--months .ring__rotor {
+  transition-delay: 70ms;
+}
+
+.is-entering .ring--weekdays .ring__rotor {
+  transition-delay: 140ms;
+}
+
+.ring__gap {
+  fill: none;
+  stroke: var(--ring-gap);
+  stroke-linecap: round;
+}
+
+.ring__gap-hit {
+  fill: none;
+  stroke: transparent;
+  pointer-events: stroke;
+}
+
+.ring__gap-label {
+  font: 600 21px var(--font-mono);
+  letter-spacing: 5px;
+  fill: var(--text-faint);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.ring__window {
+  fill: var(--accent);
+  fill-opacity: 0.12;
+  stroke: var(--accent);
+  stroke-opacity: 0.4;
+  stroke-width: 1.5;
+}
+
+.ring__window.is-arriving {
+  animation: window-arrive 1.2s var(--ease-out);
+}
+
+@keyframes window-arrive {
+  0% {
+    fill-opacity: 0.04;
+    stroke-opacity: 0.1;
+  }
+
+  45% {
+    fill-opacity: 0.26;
+    stroke-opacity: 0.9;
+  }
+
+  100% {
+    fill-opacity: 0.12;
+    stroke-opacity: 0.4;
+  }
+}
+
+.ring__hit {
+  fill: transparent;
+}
+
+.ring__item {
+  transition: opacity 0.5s ease;
+}
+
+.ring__item.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ring__label {
+  font: 500 30px var(--font-mono);
+  fill: var(--ring-label);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  transition: fill 0.6s ease, opacity 0.6s ease;
+}
+
+.ring--months .ring__label,
+.ring--weekdays .ring__label {
+  letter-spacing: 4px;
+}
+
+.ring__item.is-past .ring__label {
+  opacity: 0.55;
+}
+
+.ring__item.is-current .ring__label {
+  fill: var(--accent);
+  font-weight: 700;
+  opacity: 1;
+}
+
+.ring__focus {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.ring__focus circle {
+  fill: none;
+  stroke: var(--focus);
+  stroke-width: 3;
+}
