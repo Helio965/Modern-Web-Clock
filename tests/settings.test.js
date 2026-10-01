@@ -143,6 +143,13 @@ describe('recent locations', () => {
       ['Asia/Tokyo', 'Australia/Sydney', 'Europe/Paris', 'Europe/London', 'America/New_York']);
   });
 
+  test('aliases of the same zone and place are one entry', () => {
+    const storage = memoryStorage();
+    rememberLocation({ timeZone: 'Asia/Kolkata', location: 'new-delhi' }, storage);
+    rememberLocation({ timeZone: 'Asia/Calcutta', location: 'new-delhi' }, storage);
+    assert.deepEqual(loadRecentLocations(storage), [{ timeZone: 'Asia/Calcutta', location: 'new-delhi' }]);
+  });
+
   test('ignores corrupt or unsupported entries', () => {
     const storage = memoryStorage({
       [RECENTS_KEY]: JSON.stringify([{ timeZone: 'Mars/Olympus' }, null, { timeZone: 'Asia/Tokyo', location: 'tokyo' }]),

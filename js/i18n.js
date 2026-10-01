@@ -297,7 +297,8 @@ export function formatPercent(language, fraction, digits = 2) {
 
 /**
  * Translates static markup: [data-i18n] sets text, [data-i18n-aria-label]
- * sets aria-label. Also updates <html lang>.
+ * sets aria-label, [data-i18n-placeholder] sets placeholder. Also updates
+ * <html lang>.
  */
 export function applyTranslations(root, language) {
   const { locale } = getDictionary(language);
@@ -307,5 +308,8 @@ export function applyTranslations(root, language) {
   }
   for (const node of root.querySelectorAll('[data-i18n-aria-label]')) {
     node.setAttribute('aria-label', t(language, node.dataset.i18nAriaLabel));
+  }
+  for (const node of root.querySelectorAll('[data-i18n-placeholder]')) {
+    node.setAttribute('placeholder', t(language, node.dataset.i18nPlaceholder));
   }
 }

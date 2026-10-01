@@ -11,7 +11,7 @@
  */
 
 import { DEFAULT_LANGUAGE, LANGUAGES } from './i18n.js';
-import { DEFAULT_TIME_ZONE, isValidTimeZone } from './zoned-time.js';
+import { DEFAULT_TIME_ZONE, isSameTimeZone, isValidTimeZone } from './zoned-time.js';
 
 export const STORAGE_KEY = 'modern-circular-clock:settings';
 export const RECENTS_KEY = 'modern-circular-clock:recent-locations';
@@ -95,7 +95,8 @@ export function saveSettings(settings, storage = getStorage()) {
 
 /* ---------- Recent locations ---------- */
 
-const sameLocation = (a, b) => a.timeZone === b.timeZone && a.location === b.location;
+// Aliases count as the same zone (e.g. Asia/Kolkata and Asia/Calcutta).
+const sameLocation = (a, b) => a.location === b.location && isSameTimeZone(a.timeZone, b.timeZone);
 
 /** Last chosen locations, newest first ({ timeZone, location } pairs). */
 export function loadRecentLocations(storage = getStorage()) {

@@ -17,8 +17,9 @@ import { createTimeSource, parseSimulation } from './time-source.js';
 import { CalendarRings } from './calendar.js';
 import { AnalogClock, DigitalClock } from './clock.js';
 import { ProgressPanel } from './progress.js';
-import { SettingsPanel, loadSettings } from './settings.js';
+import { SettingsPanel, loadRecentLocations, loadSettings } from './settings.js';
 import { formatLocation, locations } from './locations.js';
+import { LocationPicker } from './location-picker.js';
 import { applyTranslations, formatTimeString, formatUtcOffset, getDictionary, t } from './i18n.js';
 import {
   TooltipController,
@@ -55,6 +56,8 @@ const digital = new DigitalClock(document.getElementById('digital'));
 const progressPanel = new ProgressPanel(document.getElementById('progress'));
 const simBadge = document.getElementById('sim-badge');
 const notice = document.getElementById('notice');
+const locationChip = document.getElementById('location-chip');
+const locationCard = document.getElementById('location-card');
 const tooltips = new TooltipController({
   element: document.getElementById('tooltip'),
   liveRegion: document.getElementById('live-region'),
@@ -91,6 +94,9 @@ function renderLocation() {
     if (value !== undefined && node.textContent !== value) node.textContent = value;
   }
   document.getElementById('clock-dial').setAttribute('aria-label', t(settings.language, 'clockLabel', names.short));
+  for (const opener of [locationChip, locationCard]) {
+    opener.setAttribute('aria-label', t(settings.language, 'changeLocation', names.full));
+  }
   analog.setCity(names.short.toLocaleUpperCase(locale));
 }
 
@@ -250,7 +256,7 @@ function startIntro() {
 function start() {
   calendar.enableExploration((node, ring) => tooltips.show(node, 'keyboard', { owner: ring }));
   applySettings();
-  new SettingsPanel({
+  const settingsPanel = new SettingsPanel({
     dialog: document.getElementById('settings'),
     openButton: document.getElementById('settings-open'),
     settings,
@@ -259,6 +265,23 @@ function start() {
       applySettings(key);
     },
   });
+
+  const picker = new LocationPicker({
+    dialog: document.getElementById('location-picker'),
+    directory: locations,
+    getContext: () => ({
+      language: settings.language,
+      timeZone: settings.timeZone,
+      placeKey: place.key,
+      now: timeSource.now(),
+      recents: loadRecentLocations(),
+    }),
+    onSelect: (choice) => settingsPanel.setLocation(choice),
+  });
+  // The header chip is a shortcut to the picker; the settings card opens it too.
+  for (const opener of [locationChip, locationCard]) {
+    opener.addEventListener('click', () => picker.open(opener));
+  }
 
   if (storageReport.rejectedTimeZone) {
     showNotice(t(settings.language, 'zoneRejected', storageReport.rejectedTimeZone));

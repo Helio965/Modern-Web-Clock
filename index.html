@@ -2,7 +2,7 @@
 <html lang="pt-BR" data-theme="dark" class="is-booting">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="description" content="Relógio e calendário circular com anéis concêntricos no horário da localização escolhida — São Paulo, Tóquio, Nova York ou qualquer fuso IANA.">
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#0a0b0d">
@@ -56,10 +56,14 @@
 
       <p class="sim-badge" id="sim-badge" hidden></p>
 
-      <p class="zone-chip">
+      <button class="zone-chip" id="location-chip" type="button" aria-haspopup="dialog" aria-controls="location-picker"
+        aria-label="Alterar localização (atual: São Paulo — Brasil)">
         <span class="zone-chip__dot" aria-hidden="true"></span>
         <span class="zone-chip__name" data-location="medium">São Paulo — Brasil</span>
-      </p>
+        <svg class="zone-chip__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
 
       <button class="icon-button" id="settings-open" type="button" aria-haspopup="dialog" aria-controls="settings"
         aria-label="Abrir configurações" data-i18n-aria-label="openSettings">
@@ -219,16 +223,72 @@
 
       <div class="setting setting--location">
         <p class="setting__label" data-i18n="locationTitle">Localização</p>
-        <div class="location-card">
+        <button class="location-card" id="location-card" type="button" aria-haspopup="dialog" aria-controls="location-picker"
+          aria-label="Alterar localização (atual: São Paulo — Brasil)">
           <span class="location-card__dot" aria-hidden="true"></span>
           <span class="location-card__text">
             <span class="location-card__name" data-location="full">São Paulo — Brasil</span>
             <span class="location-card__zone"><span data-location="zone">America/Sao_Paulo</span> · <span data-utc-offset>UTC</span></span>
           </span>
-        </div>
+          <span class="location-card__action" data-i18n="selectLocation">Selecionar localização</span>
+          <svg class="location-card__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M10 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
         <p class="setting__note" data-i18n="zoneNote">O instante vem do relógio do dispositivo e é convertido para o fuso da localização escolhida; offsets e horário de verão vêm do navegador.</p>
       </div>
     </form>
+  </dialog>
+
+  <dialog class="picker" id="location-picker" aria-labelledby="picker-title">
+    <header class="picker__header">
+      <h2 class="picker__title" id="picker-title" data-i18n="selectLocation">Selecionar localização</h2>
+      <button class="icon-button icon-button--small" type="button" data-picker-close aria-label="Fechar" data-i18n-aria-label="close">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </header>
+
+    <div class="picker__search">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M16 16l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <input class="picker__input" id="location-search" type="text" inputmode="search" enterkeyhint="search"
+        role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="location-results"
+        aria-label="Pesquisar localização" data-i18n-aria-label="searchLabel"
+        placeholder="Pesquisar cidade, estado ou país" data-i18n-placeholder="searchPlaceholder"
+        autocomplete="off" autocapitalize="none" spellcheck="false" data-picker-search>
+    </div>
+
+    <div class="picker__actions">
+      <button class="picker__action" type="button" data-picker-device>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".6"/>
+        </svg>
+        <span class="picker__action-text">
+          <span class="picker__action-label" data-i18n="useDeviceZone">Usar horário do dispositivo</span>
+          <span class="picker__action-detail" data-picker-device-detail></span>
+        </span>
+      </button>
+      <button class="picker__action" type="button" data-picker-default>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v3.7h3.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="picker__action-text">
+          <span class="picker__action-label" data-i18n="restoreDefault">Restaurar padrão</span>
+          <span class="picker__action-detail" data-picker-default-detail></span>
+        </span>
+      </button>
+    </div>
+
+    <div class="picker__results" id="location-results" role="listbox" aria-labelledby="picker-title" data-picker-results></div>
+    <p class="picker__empty" data-picker-empty hidden></p>
+    <p class="picker__hint" data-i18n="pickerHint">Use ↑ ↓ para navegar e Enter para escolher.</p>
+    <p class="sr-only" aria-live="polite" data-picker-status></p>
   </dialog>
 
   <div class="tooltip" id="tooltip" role="tooltip" hidden></div>

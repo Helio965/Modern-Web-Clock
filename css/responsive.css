@@ -159,6 +159,33 @@
   }
 }
 
+/* ---------- Location picker on phones: full screen, keyboard-aware ---------- */
+@media (max-width: 600px) {
+  .picker {
+    width: 100vw;
+    max-width: 100vw;
+    height: var(--picker-height);
+    max-height: var(--picker-height);
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .picker__header {
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+
+  .picker__results {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 420px) {
+  .picker__actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   /* Decorative motion is removed; the clock keeps working (the second hand
