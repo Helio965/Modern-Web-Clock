@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="pt-BR" data-theme="dark" class="is-booting">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -43,8 +43,48 @@
           <path class="clock__marker" d="M491 7 h18 l-9 11 z"/>
           <g class="clock__rings" id="clock-rings"></g>
           <circle class="clock__face" cx="500" cy="500" r="238"/>
+          <g class="clock__face-details" id="clock-face-details" aria-hidden="true"></g>
+        </svg>
+
+        <svg class="clock__hands" id="clock-hands" viewBox="0 0 1000 1000" aria-hidden="true" focusable="false">
+          <defs>
+            <filter id="hand-shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow class="hand-shadow" dx="0" dy="5" stdDeviation="5"/>
+            </filter>
+          </defs>
+          <g class="hands" filter="url(#hand-shadow)">
+            <g class="hand hand--hour" data-hand="hour">
+              <line x1="500" y1="526" x2="500" y2="370"/>
+            </g>
+            <g class="hand hand--minute" data-hand="minute">
+              <line x1="500" y1="530" x2="500" y2="296"/>
+            </g>
+            <circle class="hand-cap" cx="500" cy="500" r="14"/>
+            <g class="hand hand--second" data-hand="second">
+              <line x1="500" y1="552" x2="500" y2="280"/>
+              <circle cx="500" cy="552" r="7"/>
+            </g>
+            <circle class="hand-cap hand-cap--second" cx="500" cy="500" r="6"/>
+          </g>
         </svg>
       </figure>
+
+      <section class="panel panel--digital" id="digital" aria-labelledby="digital-title">
+        <p class="eyebrow" id="digital-title">Horário de São Paulo</p>
+        <p class="digital-time">
+          <time data-digital="time" datetime=""><span data-digital="hm">--:--</span><span class="digital-time__seconds" data-digital="seconds">:--</span><span class="digital-time__period" data-digital="period" hidden></span></time>
+        </p>
+        <p class="digital-date">
+          <span class="digital-date__day" data-digital="day">--</span>
+          <span class="digital-date__month" data-digital="month">---</span>
+          <span class="digital-date__year" data-digital="year">----</span>
+        </p>
+        <p class="digital-weekday" data-digital="weekday">&nbsp;</p>
+        <p class="digital-zone">
+          <span class="digital-zone__name">São Paulo — Brasil</span>
+          <span class="digital-zone__id">America/Sao_Paulo · <span data-digital="offset">UTC</span></span>
+        </p>
+      </section>
     </main>
   </div>
 

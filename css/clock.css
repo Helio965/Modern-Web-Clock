@@ -196,3 +196,110 @@
   stroke: var(--focus);
   stroke-width: 3;
 }
+
+/* ---------- Face ---------- */
+.tick {
+  stroke: var(--tick-minor);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.tick--hour {
+  stroke: var(--tick);
+  stroke-width: 4;
+}
+
+.face-label {
+  fill: var(--text-faint);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.face-label--city {
+  font: 600 18px var(--font-ui);
+  letter-spacing: 7px;
+}
+
+.face-label--offset {
+  font: 500 16px var(--font-mono);
+  letter-spacing: 2px;
+}
+
+/* ---------- Hands ---------- */
+.hand line {
+  stroke: var(--hand);
+  stroke-linecap: round;
+}
+
+.hand--hour line {
+  stroke-width: 15;
+}
+
+.hand--minute line {
+  stroke-width: 10;
+}
+
+.hand--second line {
+  stroke: var(--accent-day);
+  stroke-width: 3.5;
+}
+
+.hand--second circle,
+.hand-cap--second {
+  fill: var(--accent-day);
+}
+
+.hand-cap {
+  fill: var(--hand);
+}
+
+.hand-shadow {
+  flood-color: var(--hand-shadow);
+}
+
+.hand--second,
+.hand-cap--second {
+  transition: opacity 0.4s ease;
+}
+
+/* ---------- Opening animation ---------- */
+.is-intro .clock {
+  animation: clock-enter 0.9s var(--ease-out) both;
+}
+
+.is-intro .ring {
+  animation: fade-in 0.7s ease both;
+}
+
+.is-intro .ring--days {
+  animation-delay: 0.1s;
+}
+
+.is-intro .ring--months {
+  animation-delay: 0.2s;
+}
+
+.is-intro .ring--weekdays {
+  animation-delay: 0.3s;
+}
+
+.is-intro .clock__face,
+.is-intro .clock__face-details {
+  animation: fade-in 0.6s ease 0.45s both;
+}
+
+.is-intro .clock__hands {
+  animation: fade-in 0.35s ease 0.6s both;
+}
+
+@keyframes clock-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.94) rotate(-5deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

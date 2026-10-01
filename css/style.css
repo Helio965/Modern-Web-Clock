@@ -27,6 +27,7 @@
   --tick: rgb(255 255 255 / 0.32);
   --tick-minor: rgb(255 255 255 / 0.12);
   --hand: #f1f2f4;
+  --hand-shadow: rgb(0 0 0 / 0.6);
   --shadow: rgb(0 0 0 / 0.55);
 
   --accent-day: #ff5470;
@@ -70,6 +71,7 @@
   --tick: rgb(15 20 30 / 0.5);
   --tick-minor: rgb(15 20 30 / 0.2);
   --hand: #16191d;
+  --hand-shadow: rgb(20 30 50 / 0.3);
   --shadow: rgb(30 40 60 / 0.22);
 
   --accent-day: #e11d48;
@@ -122,6 +124,10 @@ input {
   color: inherit;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -137,6 +143,47 @@ input {
 :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 3px;
+}
+
+/* ---------- Boot and opening animation ---------- */
+.is-booting .app {
+  opacity: 0;
+  /* Safety net: reveal the page even if the script never starts. */
+  animation: fade-in 0.4s ease 2.5s forwards;
+}
+
+.is-intro .topbar {
+  animation: fade-in 0.6s ease both;
+}
+
+.is-intro .panel {
+  animation: rise-in 0.8s var(--ease-out) 0.7s both;
+}
+
+.is-intro .panel--progress {
+  animation-delay: 0.82s;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* ---------- App shell ---------- */
@@ -235,4 +282,95 @@ input {
   border-radius: var(--radius-md);
   background: var(--surface);
   text-align: center;
+}
+
+/* ---------- Panels ---------- */
+.panel {
+  width: 100%;
+  max-width: 420px;
+  padding: clamp(18px, 2vw, 28px);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset;
+}
+
+.eyebrow {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* ---------- Digital readout ---------- */
+.panel--digital {
+  grid-area: digital;
+}
+
+.digital-time {
+  margin-top: 10px;
+  font-size: clamp(2.6rem, 3.8vw, 4.4rem);
+  font-weight: 250;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.digital-time__seconds {
+  color: var(--text-muted);
+}
+
+.digital-time__period {
+  margin-left: 0.3em;
+  color: var(--text-muted);
+  font-size: 0.36em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  vertical-align: 0.9em;
+}
+
+.digital-date {
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  letter-spacing: 0.2em;
+}
+
+.digital-date__day {
+  color: var(--accent-day);
+  font-weight: 700;
+}
+
+.digital-date__month {
+  color: var(--accent-month);
+  font-weight: 700;
+}
+
+.digital-weekday {
+  margin-top: 6px;
+  color: var(--accent-week);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+}
+
+.digital-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--surface-border);
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.digital-zone__id {
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
 }
