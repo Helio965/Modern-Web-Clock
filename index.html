@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark" class="is-booting">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Relógio e calendário circular com anéis concêntricos, sempre no horário de São Paulo — Brasil (America/Sao_Paulo).">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0a0b0d">
+  <title>Modern Circular Clock — São Paulo</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/clock.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <script>
+    // Apply the saved theme before the first paint (avoids a dark/light flash).
+    try {
+      var saved = JSON.parse(localStorage.getItem('modern-circular-clock:settings') || 'null');
+      if (saved && saved.theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    } catch (error) { /* storage unavailable: keep the dark default */ }
+
+    // The whole app depends on the browser resolving America/Sao_Paulo. If it
+    // cannot, show a message instead of silently using another time zone.
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo' }).format(0);
+    } catch (error) {
+      document.documentElement.classList.add('no-timezone');
+    }
+  </script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand__mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".35"/>
+          <circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".6"/>
+          <circle cx="12" cy="12" r="1.8" fill="currentColor"/>
+        </svg>
+        <span class="brand__name">Modern Circular Clock</span>
+      </div>
+
+      <p class="sim-badge" id="sim-badge" hidden></p>
+
+      <p class="zone-chip">
+        <span class="zone-chip__dot" aria-hidden="true"></span>
+        <span data-i18n="location">São Paulo — Brasil</span>
+      </p>
+
+      <button class="icon-button" id="settings-open" type="button" aria-haspopup="dialog" aria-controls="settings"
+        aria-label="Abrir configurações" data-i18n-aria-label="openSettings">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 7h10M18 7h2M4 17h4M12 17h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          <circle cx="16" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          <circle cx="10" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+        </svg>
+      </button>
+    </header>
+
+    <p class="zone-error" role="alert">
+      <span lang="pt-BR">Este navegador não consegue calcular o fuso America/Sao_Paulo. Atualize o navegador para usar o relógio.</span>
+      <span lang="en">This browser cannot compute the America/Sao_Paulo time zone. Please update your browser to use the clock.</span>
+    </p>
+
+    <main class="stage" id="main">
+      <figure class="clock" id="clock">
+        <svg class="clock__dial" id="clock-dial" viewBox="0 0 1000 1000" role="group"
+          aria-label="Relógio circular no horário de São Paulo" data-i18n-aria-label="clockLabel">
+          <defs>
+            <radialGradient id="face-gradient" cx="50%" cy="38%" r="65%">
+              <stop class="face-stop--hi" offset="0%"/>
+              <stop class="face-stop--lo" offset="100%"/>
+            </radialGradient>
+          </defs>
+          <circle class="clock__bezel" cx="500" cy="500" r="496"/>
+          <path class="clock__marker" d="M491 7 h18 l-9 11 z"/>
+          <g class="clock__rings" id="clock-rings"></g>
+          <circle class="clock__face" cx="500" cy="500" r="238" data-tip="face"/>
+          <g class="clock__face-details" id="clock-face-details" aria-hidden="true"></g>
+        </svg>
+
+        <svg class="clock__hands" id="clock-hands" viewBox="0 0 1000 1000" aria-hidden="true" focusable="false">
+          <defs>
+            <filter id="hand-shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow class="hand-shadow" dx="0" dy="5" stdDeviation="5"/>
+            </filter>
+          </defs>
+          <g class="hands" filter="url(#hand-shadow)">
+            <g class="hand hand--hour" data-hand="hour">
+              <line x1="500" y1="526" x2="500" y2="370"/>
+            </g>
+            <g class="hand hand--minute" data-hand="minute">
+              <line x1="500" y1="530" x2="500" y2="296"/>
+            </g>
+            <circle class="hand-cap" cx="500" cy="500" r="14"/>
+            <g class="hand hand--second" data-hand="second">
+              <line x1="500" y1="552" x2="500" y2="280"/>
+              <circle cx="500" cy="552" r="7"/>
+            </g>
+            <circle class="hand-cap hand-cap--second" cx="500" cy="500" r="6"/>
+          </g>
+        </svg>
+      </figure>
+
+      <section class="panel panel--digital" id="digital" aria-labelledby="digital-title">
+        <p class="eyebrow" id="digital-title" data-i18n="spTime">Horário de São Paulo</p>
+        <p class="digital-time">
+          <time data-digital="time" datetime=""><span data-digital="hm">--:--</span><span class="digital-time__seconds" data-digital="seconds">:--</span><span class="digital-time__period" data-digital="period" hidden></span></time>
+        </p>
+        <p class="digital-date">
+          <span class="digital-date__day" data-digital="day">--</span>
+          <span class="digital-date__month" data-digital="month">---</span>
+          <span class="digital-date__year" data-digital="year">----</span>
+        </p>
+        <p class="digital-weekday" data-digital="weekday">&nbsp;</p>
+        <p class="digital-zone">
+          <span class="digital-zone__name" data-i18n="location">São Paulo — Brasil</span>
+          <span class="digital-zone__id">America/Sao_Paulo · <span data-digital="offset">UTC</span></span>
+        </p>
+      </section>
+
+      <section class="panel panel--progress" id="progress" aria-labelledby="progress-title">
+        <p class="eyebrow" id="progress-title" data-i18n="progressTitle">Progresso</p>
+        <div class="progress-body">
+          <svg class="progress-rings" viewBox="0 0 200 200" aria-hidden="true" focusable="false" data-progress="rings"></svg>
+          <div class="progress-legend">
+          <div class="progress-row progress-row--day" data-progress-row="day" role="progressbar" aria-valuemin="0" aria-valuemax="100" tabindex="0" data-tip="progress" data-i18n-aria-label="progressDayLong" aria-label="Progresso do dia">
+            <span class="progress-row__dot" aria-hidden="true"></span>
+            <span class="progress-row__label" data-i18n="progressDay">Dia</span>
+            <span class="progress-row__value" data-progress-value>0,00%</span>
+            <span class="progress-row__detail" data-progress-detail></span>
+          </div>
+          <div class="progress-row progress-row--week" data-progress-row="week" role="progressbar" aria-valuemin="0" aria-valuemax="100" tabindex="0" data-tip="progress" data-i18n-aria-label="progressWeekLong" aria-label="Progresso da semana">
+            <span class="progress-row__dot" aria-hidden="true"></span>
+            <span class="progress-row__label" data-i18n="progressWeek">Semana</span>
+            <span class="progress-row__value" data-progress-value>0,00%</span>
+            <span class="progress-row__detail" data-progress-detail></span>
+          </div>
+          <div class="progress-row progress-row--month" data-progress-row="month" role="progressbar" aria-valuemin="0" aria-valuemax="100" tabindex="0" data-tip="progress" data-i18n-aria-label="progressMonthLong" aria-label="Progresso do mês">
+            <span class="progress-row__dot" aria-hidden="true"></span>
+            <span class="progress-row__label" data-i18n="progressMonth">Mês</span>
+            <span class="progress-row__value" data-progress-value>0,00%</span>
+            <span class="progress-row__detail" data-progress-detail></span>
+          </div>
+          <div class="progress-row progress-row--year" data-progress-row="year" role="progressbar" aria-valuemin="0" aria-valuemax="100" tabindex="0" data-tip="progress" data-i18n-aria-label="progressYearLong" aria-label="Progresso do ano">
+            <span class="progress-row__dot" aria-hidden="true"></span>
+            <span class="progress-row__label" data-i18n="progressYear">Ano</span>
+            <span class="progress-row__value" data-progress-value>0,00%</span>
+            <span class="progress-row__detail" data-progress-detail></span>
+          </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="settings" id="settings" aria-labelledby="settings-title">
+    <form class="settings__form" method="dialog">
+      <header class="settings__header">
+        <h2 class="settings__title" id="settings-title" data-i18n="settings">Configurações</h2>
+        <button class="icon-button icon-button--small" type="submit" value="close" aria-label="Fechar" data-i18n-aria-label="close">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </header>
+
+      <fieldset class="setting">
+        <legend class="setting__label" data-i18n="theme">Tema</legend>
+        <div class="segmented">
+          <label><input type="radio" name="theme" value="dark"><span data-i18n="themeDark">Escuro</span></label>
+          <label><input type="radio" name="theme" value="light"><span data-i18n="themeLight">Claro</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend class="setting__label" data-i18n="hourFormat">Formato</legend>
+        <div class="segmented">
+          <label><input type="radio" name="hourFormat" value="24"><span>24h</span></label>
+          <label><input type="radio" name="hourFormat" value="12"><span>12h</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend class="setting__label" data-i18n="language">Idioma</legend>
+        <div class="segmented">
+          <label><input type="radio" name="language" value="pt"><span lang="pt-BR">Português</span></label>
+          <label><input type="radio" name="language" value="en"><span lang="en">English</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend class="setting__label" data-i18n="seconds">Segundos</legend>
+        <div class="segmented">
+          <label><input type="radio" name="showSeconds" value="show"><span data-i18n="show">Mostrar</span></label>
+          <label><input type="radio" name="showSeconds" value="hide"><span data-i18n="hide">Ocultar</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend class="setting__label" data-i18n="progressSetting">Indicadores de progresso</legend>
+        <div class="segmented">
+          <label><input type="radio" name="showProgress" value="show"><span data-i18n="show">Mostrar</span></label>
+          <label><input type="radio" name="showProgress" value="hide"><span data-i18n="hide">Ocultar</span></label>
+        </div>
+      </fieldset>
+
+      <div class="setting setting--fixed">
+        <p class="setting__label" data-i18n="zone">Fuso</p>
+        <p class="setting__fixed">
+          <svg class="setting__lock" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          </svg>
+          <span data-i18n="location">São Paulo — Brasil</span>
+          <span class="setting__badge" data-i18n="zoneFixed">Fixo</span>
+        </p>
+        <p class="setting__zone-id">America/Sao_Paulo</p>
+        <p class="setting__note" data-i18n="zoneNote">O instante atual vem do relógio do dispositivo e é sempre convertido para America/Sao_Paulo. O fuso não é configurável.</p>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+  <div class="sr-only" id="live-region" aria-live="polite"></div>
+
+  <noscript>
+    <p class="noscript">Este relógio precisa de JavaScript para calcular o horário de São Paulo.</p>
+  </noscript>
+</body>
+</html>

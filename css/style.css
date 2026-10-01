@@ -1,0 +1,819 @@
+/* ==========================================================================
+   Modern Circular Clock — base styles
+   Design tokens, themes, page layout and shared components.
+   ========================================================================== */
+
+/* ---------- Design tokens (dark theme is the default) ---------- */
+:root {
+  color-scheme: dark;
+
+  --bg: #0a0b0d;
+  --bg-glow: #171a1f;
+  --bg-elevated: #131519;
+  --surface: rgb(255 255 255 / 0.025);
+  --surface-strong: rgb(255 255 255 / 0.05);
+  --surface-border: rgb(255 255 255 / 0.075);
+  --text: #e8eaed;
+  --text-muted: #9aa0a8;
+  --text-faint: #737a84;
+
+  --bezel: #121418;
+  --bezel-edge: rgb(255 255 255 / 0.08);
+  --ring: #181b20;
+  --ring-edge: rgb(255 255 255 / 0.05);
+  --ring-gap: #23272e;
+  --ring-gap-hover: #2d323a;
+  --ring-label: #7d848e;
+  --face: #0e1013;
+  --face-hi: #181b21;
+  --tick: rgb(255 255 255 / 0.32);
+  --tick-minor: rgb(255 255 255 / 0.12);
+  --hand: #f1f2f4;
+  --hand-shadow: rgb(0 0 0 / 0.6);
+  --shadow: rgb(0 0 0 / 0.55);
+
+  --accent-day: #ff5470;
+  --accent-month: #4f8cff;
+  --accent-week: #34d17f;
+  --accent-year: #d4b06a;
+  --focus: #f5f7fa;
+
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --radius-pill: 999px;
+  --pad: clamp(16px, 2.6vw, 40px);
+  --gap: clamp(16px, 2.4vw, 40px);
+  --topbar-h: 64px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #e7eaee;
+  --bg-glow: #f9fafb;
+  --bg-elevated: #fbfcfd;
+  --surface: rgb(255 255 255 / 0.6);
+  --surface-strong: rgb(255 255 255 / 0.85);
+  --surface-border: rgb(15 20 30 / 0.09);
+  --text: #14171b;
+  --text-muted: #4f5660;
+  --text-faint: #646b75;
+
+  --bezel: #f6f7f9;
+  --bezel-edge: rgb(15 20 30 / 0.1);
+  --ring: #eceff3;
+  --ring-edge: rgb(15 20 30 / 0.06);
+  --ring-gap: #d8dde4;
+  --ring-gap-hover: #cbd1d9;
+  --ring-label: #59606a;
+  --face: #fbfcfd;
+  --face-hi: #ffffff;
+  --tick: rgb(15 20 30 / 0.5);
+  --tick-minor: rgb(15 20 30 / 0.2);
+  --hand: #16191d;
+  --hand-shadow: rgb(20 30 50 / 0.3);
+  --shadow: rgb(30 40 60 / 0.22);
+
+  --accent-day: #e11d48;
+  --accent-month: #2563eb;
+  --accent-week: #15803d;
+  --accent-year: #a16207;
+  --focus: #14171b;
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--bg);
+  background-image: radial-gradient(ellipse 80% 70% at 50% 45%, var(--bg-glow) 0%, var(--bg) 70%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+p,
+h1,
+h2,
+h3,
+figure,
+ul {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* ---------- Boot and opening animation ---------- */
+.is-booting .app {
+  opacity: 0;
+  /* Safety net: reveal the page even if the script never starts. */
+  animation: fade-in 0.4s ease 2.5s forwards;
+}
+
+.is-intro .topbar {
+  animation: fade-in 0.6s ease both;
+}
+
+.is-intro .panel {
+  animation: rise-in 0.8s var(--ease-out) 0.7s both;
+}
+
+.is-intro .panel--progress {
+  animation-delay: 0.82s;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- App shell ---------- */
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--topbar-h);
+  padding: 10px var(--pad);
+  padding-top: max(10px, env(safe-area-inset-top));
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--text);
+}
+
+.brand__mark {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+
+.brand__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zone-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 6px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.zone-chip__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-week);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-week) 22%, transparent);
+}
+
+/* ---------- Stage layout (mobile first; see responsive.css) ---------- */
+.stage {
+  --clock-size: max(260px, min(calc(100vw - 2 * var(--pad)), calc(100dvh - var(--topbar-h) - 2 * var(--pad)), 760px));
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "clock"
+    "digital"
+    "progress";
+  justify-items: center;
+  align-content: center;
+  gap: var(--gap);
+  padding: 0 var(--pad) var(--pad);
+  padding-bottom: max(var(--pad), env(safe-area-inset-bottom));
+}
+
+.clock {
+  grid-area: clock;
+  position: relative;
+  width: var(--clock-size);
+  aspect-ratio: 1;
+}
+
+/* Shown only when the browser cannot resolve America/Sao_Paulo (see index.html). */
+.zone-error {
+  display: none;
+}
+
+.no-timezone .app {
+  opacity: 1;
+  animation: none;
+}
+
+.no-timezone .stage {
+  display: none;
+}
+
+.no-timezone .zone-error {
+  display: grid;
+  gap: 8px;
+  max-width: 34rem;
+  margin: 2rem auto;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--accent-day);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  text-align: center;
+}
+
+.noscript {
+  max-width: 32rem;
+  margin: 2rem auto;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  text-align: center;
+}
+
+/* ---------- Panels ---------- */
+.panel {
+  width: 100%;
+  max-width: 420px;
+  padding: clamp(18px, 2vw, 28px);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset;
+}
+
+.eyebrow {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* ---------- Digital readout ---------- */
+.panel--digital {
+  grid-area: digital;
+  container-type: inline-size;
+}
+
+.digital-time {
+  margin-top: 10px;
+  font-size: clamp(2.2rem, 3.4vw, 4rem);
+  /* Sized from the panel width so "03:47:39 PM" always fits. */
+  font-size: clamp(2rem, 17cqi, 4.4rem);
+  font-weight: 250;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.digital-time__seconds {
+  color: var(--text-muted);
+}
+
+.digital-time__period {
+  margin-left: 0.3em;
+  color: var(--text-muted);
+  font-size: 0.36em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  vertical-align: 0.9em;
+}
+
+.digital-date {
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  letter-spacing: 0.2em;
+}
+
+.digital-date__day {
+  color: var(--accent-day);
+  font-weight: 700;
+}
+
+.digital-date__month {
+  color: var(--accent-month);
+  font-weight: 700;
+}
+
+.digital-weekday {
+  margin-top: 6px;
+  color: var(--accent-week);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+}
+
+.digital-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--surface-border);
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.digital-zone__id {
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Progress ---------- */
+.panel--progress {
+  grid-area: progress;
+  container-type: inline-size;
+}
+
+.progress-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 18px 24px;
+  margin-top: 14px;
+}
+
+.progress-rings {
+  flex: 0 0 auto;
+  width: clamp(120px, 11vw, 168px);
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.progress-track {
+  fill: none;
+  stroke: var(--ring);
+}
+
+.progress-arc {
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+}
+
+.progress-arc--day,
+.progress-row--day {
+  --accent: var(--accent-day);
+}
+
+.progress-arc--week,
+.progress-row--week {
+  --accent: var(--accent-week);
+}
+
+.progress-arc--month,
+.progress-row--month {
+  --accent: var(--accent-month);
+}
+
+.progress-arc--year,
+.progress-row--year {
+  --accent: var(--accent-year);
+}
+
+.progress-legend {
+  display: grid;
+  flex: 1 1 210px;
+  gap: 10px;
+  min-width: 0;
+}
+
+.progress-row {
+  cursor: default;
+  transition: background-color 0.2s ease;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "dot label value"
+    ". detail detail";
+  align-items: center;
+  column-gap: 10px;
+  padding: 4px 6px;
+  border-radius: 10px;
+}
+
+.progress-row__dot {
+  grid-area: dot;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.progress-row__label {
+  grid-area: label;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.progress-row__value {
+  grid-area: value;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-row__detail {
+  grid-area: detail;
+  color: var(--text-faint);
+  font-size: 0.76rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Rings beside the legend whenever the panel is wide enough. */
+@container (min-width: 250px) {
+  .progress-body {
+    flex-wrap: nowrap;
+    column-gap: 20px;
+  }
+
+  .progress-rings {
+    width: clamp(90px, 34cqi, 160px);
+  }
+
+  .progress-legend {
+    flex: 1 1 auto;
+  }
+}
+
+/* ---------- Header controls ---------- */
+.icon-button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--surface-border);
+  border-radius: 13px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.icon-button:hover {
+  border-color: var(--text-faint);
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-button--small {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+}
+
+.sim-badge {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 1px dashed var(--accent-year);
+  border-radius: var(--radius-pill);
+  color: var(--accent-year);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Visibility preferences ---------- */
+.hide-progress .panel--progress {
+  display: none;
+}
+
+/* ---------- Settings dialog ---------- */
+.settings {
+  width: min(420px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  border: 1px solid var(--surface-border);
+  border-radius: 22px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: 0 40px 100px -30px rgb(0 0 0 / 0.65);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.settings[open] {
+  animation: dialog-in 0.28s var(--ease-out);
+}
+
+.settings::backdrop {
+  background: rgb(5 6 8 / 0.5);
+  backdrop-filter: blur(4px);
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.settings__form {
+  display: grid;
+  gap: 18px;
+  padding: 20px 22px 24px;
+}
+
+.settings__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.setting {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.setting__label {
+  padding: 0;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--surface-border);
+  border-radius: 13px;
+  background: var(--ring);
+}
+
+.segmented label {
+  position: relative;
+  display: block;
+}
+
+.segmented input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmented span {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 9px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.segmented label:hover span {
+  color: var(--text);
+}
+
+.segmented input:checked + span {
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.25), 0 0 0 1px var(--surface-border);
+}
+
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.setting--fixed {
+  padding: 14px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.setting__fixed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.setting__lock {
+  width: 17px;
+  height: 17px;
+  color: var(--text-muted);
+}
+
+.setting__badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-strong);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.setting__zone-id {
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.setting__note {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.progress-row:hover,
+.progress-row:focus-visible {
+  background: var(--surface-strong);
+}
+
+.progress-row:focus-visible {
+  outline-offset: 1px;
+}
+
+/* ---------- Tooltip ---------- */
+.tooltip {
+  --tip-accent: var(--text-faint);
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  display: grid;
+  gap: 2px;
+  max-width: min(300px, calc(100vw - 16px));
+  padding: 10px 13px;
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.55);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  pointer-events: none;
+  animation: fade-in 0.16s ease-out;
+}
+
+.tooltip[data-accent="day"] {
+  --tip-accent: var(--accent-day);
+}
+
+.tooltip[data-accent="month"] {
+  --tip-accent: var(--accent-month);
+}
+
+.tooltip[data-accent="week"] {
+  --tip-accent: var(--accent-week);
+}
+
+.tooltip[data-accent="year"] {
+  --tip-accent: var(--accent-year);
+}
+
+.tooltip__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.tooltip__title::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tip-accent);
+}
+
+.tooltip__line {
+  display: block;
+}
