@@ -235,3 +235,49 @@ export function toZonedIsoString(dateTime) {
   return `${dateTime.dateKey}T${pad(dateTime.hours)}:${pad(dateTime.minutes)}:${pad(dateTime.seconds)}` +
     `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
 }
+
+/* ---------------------------------------------------------------------------
+ * Temporal progress
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Start/end instants (epoch ms) of the São Paulo day, ISO week (Monday to
+ * Sunday), month and year containing `dateTime`. Boundaries are real São
+ * Paulo midnights, so a 23 h or 25 h day (DST) is measured correctly.
+ */
+export function getPeriodBounds({ year, month, day, isoWeekday: weekday }) {
+  const startOf = ({ year: y, month: m, day: d }) => zonedTimeToEpoch(y, m, d);
+  const today = { year, month, day };
+  const monday = addDays(today, 1 - weekday);
+  const nextMonth = month === 12 ? { year: year + 1, month: 1, day: 1 } : { year, month: month + 1, day: 1 };
+
+  return {
+    day: { start: startOf(today), end: startOf(addDays(today, 1)) },
+    week: { start: startOf(monday), end: startOf(addDays(monday, 7)) },
+    month: { start: startOf({ year, month, day: 1 }), end: startOf(nextMonth) },
+    year: { start: startOf({ year, month: 1, day: 1 }), end: startOf({ year: year + 1, month: 1, day: 1 }) },
+  };
+}
+
+let cachedBounds = { dateKey: null, bounds: null };
+
+/**
+ * Fraction (0–1) of the current São Paulo day, week, month and year that has
+ * already elapsed, including the fraction of the current day/second.
+ * Boundaries are recomputed only when the date changes.
+ */
+export function getTemporalProgress(dateTime) {
+  if (cachedBounds.dateKey !== dateTime.dateKey) {
+    cachedBounds = { dateKey: dateTime.dateKey, bounds: getPeriodBounds(dateTime) };
+  }
+  const { bounds } = cachedBounds;
+  const fraction = ({ start, end }) => Math.min(1, Math.max(0, (dateTime.epochMs - start) / (end - start)));
+
+  return {
+    day: fraction(bounds.day),
+    week: fraction(bounds.week),
+    month: fraction(bounds.month),
+    year: fraction(bounds.year),
+    bounds,
+  };
+}

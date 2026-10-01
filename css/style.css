@@ -374,3 +374,104 @@ input {
   font-size: 0.75rem;
   letter-spacing: 0.04em;
 }
+
+/* ---------- Progress ---------- */
+.panel--progress {
+  grid-area: progress;
+}
+
+.progress-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 18px 24px;
+  margin-top: 14px;
+}
+
+.progress-rings {
+  flex: 0 0 auto;
+  width: clamp(120px, 11vw, 168px);
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.progress-track {
+  fill: none;
+  stroke: var(--ring);
+}
+
+.progress-arc {
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+}
+
+.progress-arc--day,
+.progress-row--day {
+  --accent: var(--accent-day);
+}
+
+.progress-arc--week,
+.progress-row--week {
+  --accent: var(--accent-week);
+}
+
+.progress-arc--month,
+.progress-row--month {
+  --accent: var(--accent-month);
+}
+
+.progress-arc--year,
+.progress-row--year {
+  --accent: var(--accent-year);
+}
+
+.progress-legend {
+  display: grid;
+  flex: 1 1 210px;
+  gap: 10px;
+  min-width: 0;
+}
+
+.progress-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "dot label value"
+    ". detail detail";
+  align-items: center;
+  column-gap: 10px;
+  padding: 4px 6px;
+  border-radius: 10px;
+}
+
+.progress-row__dot {
+  grid-area: dot;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.progress-row__label {
+  grid-area: label;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.progress-row__value {
+  grid-area: value;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-row__detail {
+  grid-area: detail;
+  color: var(--text-faint);
+  font-size: 0.76rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
