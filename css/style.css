@@ -191,9 +191,10 @@ input {
 }
 
 /* ---------- App shell ---------- */
+/* Column: header, optional notices, then the stage filling the rest. */
 .app {
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
 }
@@ -232,12 +233,13 @@ input {
 }
 
 .zone-chip {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   margin-left: auto;
-  padding: 6px 12px;
+  padding: 6px 10px 6px 12px;
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-pill);
   background: var(--surface);
@@ -245,6 +247,27 @@ input {
   font-size: 0.78rem;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.zone-chip:hover {
+  border-color: var(--text-faint);
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.zone-chip__chevron {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  opacity: 0.75;
+}
+
+.zone-chip__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .zone-chip__dot {
@@ -260,6 +283,7 @@ input {
   --clock-size: max(260px, min(calc(100vw - 2 * var(--pad)), calc(100dvh - var(--topbar-h) - 2 * var(--pad)), 760px));
 
   display: grid;
+  flex: 1 0 auto;
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
     "clock"
@@ -279,7 +303,7 @@ input {
   aspect-ratio: 1;
 }
 
-/* Shown only when the browser cannot resolve America/Sao_Paulo (see index.html). */
+/* Shown only when the browser cannot resolve IANA time zones (see index.html). */
 .zone-error {
   display: none;
 }
@@ -403,6 +427,7 @@ input {
 }
 
 .digital-zone__id {
+  overflow-wrap: anywhere;
   color: var(--text-faint);
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -705,41 +730,69 @@ input {
   outline-offset: 1px;
 }
 
-.setting--fixed {
-  padding: 14px 16px;
-  border: 1px solid var(--surface-border);
-  border-radius: 14px;
-  background: var(--surface);
-}
-
-.setting__fixed {
+.location-card {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  font-size: 0.95rem;
+  gap: 8px 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.setting__lock {
-  width: 17px;
-  height: 17px;
-  color: var(--text-muted);
-}
-
-.setting__badge {
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
+.location-card:hover {
+  border-color: var(--text-faint);
   background: var(--surface-strong);
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
-.setting__zone-id {
+.location-card__action {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.location-card__chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+}
+
+.location-card__dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent-week);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-week) 22%, transparent);
+}
+
+.location-card__text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.location-card__name {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.location-card__zone {
   color: var(--text-faint);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
 }
 
 .setting__note {
@@ -816,4 +869,260 @@ input {
 
 .tooltip__line {
   display: block;
+}
+
+/* ---------- Notice (e.g. a saved time zone this browser does not support) ---------- */
+.notice {
+  max-width: min(40rem, calc(100% - 2 * var(--pad)));
+  margin: 0 auto 12px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent-year) 55%, transparent);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* ---------- Location picker ---------- */
+.picker {
+  --picker-height: 100dvh;
+
+  width: min(560px, calc(100vw - 24px));
+  height: min(700px, calc(var(--picker-height) - 24px));
+  max-height: calc(var(--picker-height) - 24px);
+  padding: 0;
+  border: 1px solid var(--surface-border);
+  border-radius: 22px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: 0 40px 100px -30px rgb(0 0 0 / 0.65);
+  overflow: hidden;
+}
+
+.picker[open] {
+  display: flex;
+  flex-direction: column;
+  animation: dialog-in 0.28s var(--ease-out);
+}
+
+.picker::backdrop {
+  background: rgb(5 6 8 / 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 12px;
+}
+
+.picker__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.picker__search {
+  position: relative;
+  margin: 0 20px;
+}
+
+.picker__search svg {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-faint);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.picker__input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  border: 1px solid var(--surface-border);
+  border-radius: 13px;
+  background: var(--ring);
+  color: var(--text);
+  /* 16px or more: no automatic zoom on iOS when focusing. */
+  font-size: 1rem;
+}
+
+.picker__input::placeholder {
+  color: var(--text-faint);
+}
+
+.picker__input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.picker__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 20px 0;
+}
+
+.picker__action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.picker__action:hover:not(:disabled) {
+  border-color: var(--text-faint);
+  background: var(--surface-strong);
+}
+
+.picker__action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.picker__action svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+}
+
+.picker__action-text {
+  display: grid;
+  min-width: 0;
+}
+
+.picker__action-label {
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.picker__action-detail {
+  overflow: hidden;
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.picker__results {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 10px;
+  padding: 0 12px 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.picker__group-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 12px 8px 6px;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.picker__option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.picker__option.is-active {
+  background: var(--surface-strong);
+  box-shadow: inset 0 0 0 1px var(--surface-border);
+}
+
+.picker__option-main {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.picker__option-name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.picker__option[aria-selected="true"] .picker__option-name {
+  color: var(--accent-week);
+  font-weight: 600;
+}
+
+.picker__option-zone {
+  overflow: hidden;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.picker__option-offset {
+  flex: none;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.picker__check {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--accent-week);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  visibility: hidden;
+}
+
+.picker__option[aria-selected="true"] .picker__check {
+  visibility: visible;
+}
+
+.picker__empty {
+  padding: 8px 24px 24px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.picker__hint {
+  padding: 10px 20px 14px;
+  border-top: 1px solid var(--surface-border);
+  color: var(--text-faint);
+  font-size: 0.75rem;
+}
+
+/* Touch-first devices do not need the keyboard hint. */
+@media (hover: none) {
+  .picker__hint {
+    display: none;
+  }
 }

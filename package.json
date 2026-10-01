@@ -1,7 +1,7 @@
 {
   "name": "modern-web-clock",
   "version": "1.0.0",
-  "description": "Relógio/calendário circular moderno com anéis concêntricos, sempre no horário de São Paulo (America/Sao_Paulo).",
+  "description": "Relógio/calendário circular moderno com anéis concêntricos para qualquer localização (fusos IANA), com São Paulo como padrão.",
   "private": true,
   "type": "module",
   "license": "MIT",

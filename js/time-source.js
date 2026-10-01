@@ -2,27 +2,33 @@
  * Time source: where "now" comes from.
  *
  * In normal use this is simply the device clock (Date.now()), i.e. an
- * absolute instant that sao-paulo-time.js converts to America/Sao_Paulo.
+ * absolute instant that zoned-time.js converts to the selected time zone.
+ * Changing the location never changes the instant, only how it is shown.
  *
  * For development and testing, a simulated clock can be started from any
- * São Paulo wall-clock moment through the URL, without waiting for that date
- * to arrive and without touching the device clock:
+ * wall-clock moment through the URL, without waiting for that date to arrive
+ * and without touching the device clock:
  *
  *   index.html?sim=2026-10-31T23:59:55          (runs at normal speed)
  *   index.html?sim=2026-12-31T23:59:50&speed=10  (runs 10x faster)
  *
- * The simulated value is always interpreted as São Paulo local time. The time
- * zone itself is never configurable.
+ * The simulated value is a civil date-time in the *selected* time zone: with
+ * Tokyo selected, ?sim=2026-12-31T23:59:50 means 23:59:50 on Dec 31st in
+ * Tokyo. If the location changes while a simulation runs, the start is
+ * re-interpreted in the new zone and the simulated time already elapsed is
+ * kept — a simulation showing 23:59:55 in São Paulo shows 23:59:55 in Tokyo
+ * after the switch, so the clock never jumps to an unrelated moment.
  */
 
-import { daysInMonth, zonedTimeToEpoch } from './sao-paulo-time.js';
+import { daysInMonth, zonedTimeToEpoch } from './zoned-time.js';
 
 const SIM_PATTERN = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/;
 const MAX_SPEED = 86_400;
 
 /**
  * Parses `?sim=YYYY-MM-DDTHH:mm[:ss]` and the optional `&speed=N`.
- * Returns null when no (valid) simulation is requested.
+ * Returns the civil start time (no time zone yet) or null when no (valid)
+ * simulation is requested.
  */
 export function parseSimulation(search) {
   const params = new URLSearchParams(search);
@@ -47,7 +53,7 @@ export function parseSimulation(search) {
     : 1;
 
   return {
-    startEpochMs: zonedTimeToEpoch(year, month, day, hours, minutes, seconds),
+    civil: Object.freeze({ year, month, day, hours, minutes, seconds }),
     speed,
     label: raw.trim(),
   };
@@ -57,22 +63,37 @@ export function parseSimulation(search) {
  * Creates the clock the app reads every frame.
  *
  * @param {ReturnType<typeof parseSimulation>} simulation
- * @param {{ wallClock?: () => number, monotonic?: () => number }} [deps]
- *        Injectable clocks (used by the tests).
+ * @param {{ timeZone?: string, wallClock?: () => number, monotonic?: () => number }} [options]
+ *        timeZone: zone in which a simulated start is interpreted (the
+ *        selected location; required for simulations); wallClock and
+ *        monotonic are injectable for tests.
  */
-export function createTimeSource(simulation = null, deps = {}) {
-  const wallClock = deps.wallClock ?? (() => Date.now());
-  const monotonic = deps.monotonic ?? (() => performance.now());
-
+export function createTimeSource(simulation = null, {
+  timeZone,
+  wallClock = () => Date.now(),
+  monotonic = () => performance.now(),
+} = {}) {
   if (!simulation) {
-    return { simulated: false, speed: 1, label: null, now: wallClock };
+    return {
+      simulated: false,
+      speed: 1,
+      label: null,
+      now: wallClock,
+      // The real clock is an absolute instant: nothing to re-interpret.
+      setTimeZone() {},
+    };
   }
 
   const anchor = monotonic();
+  let startEpochMs = zonedTimeToEpoch(simulation.civil, timeZone);
   return {
     simulated: true,
     speed: simulation.speed,
     label: simulation.label,
-    now: () => simulation.startEpochMs + (monotonic() - anchor) * simulation.speed,
+    now: () => startEpochMs + (monotonic() - anchor) * simulation.speed,
+    /** Re-interprets the simulated start in another zone, keeping the elapsed simulated time. */
+    setTimeZone(nextTimeZone) {
+      startEpochMs = zonedTimeToEpoch(simulation.civil, nextTimeZone);
+    },
   };
 }

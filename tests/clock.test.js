@@ -2,7 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { getHandAngles } from '../js/clock.js';
-import { getSaoPauloDateTime } from '../js/sao-paulo-time.js';
+import { getZonedDateTime } from '../js/zoned-time.js';
 import {
   formatDuration,
   formatLongDate,
@@ -15,6 +15,7 @@ import {
   relativeDay,
 } from '../js/i18n.js';
 
+const SP = 'America/Sao_Paulo';
 const at = (iso) => Date.parse(iso);
 const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} ≠ ${expected}`);
 
@@ -33,8 +34,8 @@ describe('hand angles', () => {
   });
 
   test('no jump across minute, hour and day changes', () => {
-    const before = getSaoPauloDateTime(at('2026-11-01T02:59:59.999Z')); // 23:59:59.999 in São Paulo
-    const after = getSaoPauloDateTime(at('2026-11-01T03:00:00.000Z')); // 00:00:00.000
+    const before = getZonedDateTime(at('2026-11-01T02:59:59.999Z'), SP); // 23:59:59.999 in São Paulo
+    const after = getZonedDateTime(at('2026-11-01T03:00:00.000Z'), SP); // 00:00:00.000
     const a = getHandAngles(before);
     const b = getHandAngles(after);
     // Every hand is a hair before a full turn, then at 0°: continuous modulo 360°.
@@ -44,9 +45,12 @@ describe('hand angles', () => {
     }
   });
 
-  test('angles come from São Paulo time, not the device', () => {
-    const dt = getSaoPauloDateTime(at('2026-10-01T18:00:00Z')); // 15:00 in São Paulo
-    close(getHandAngles(dt).hour, 90);
+  test('angles come from the selected zone, not the device', () => {
+    const instant = at('2026-10-01T18:00:00Z');
+    close(getHandAngles(getZonedDateTime(instant, SP)).hour, 90); // 15:00 in São Paulo
+    close(getHandAngles(getZonedDateTime(instant, 'Asia/Tokyo')).hour, 90); // 03:00 in Tokyo
+    close(getHandAngles(getZonedDateTime(instant, 'America/New_York')).hour, 60); // 14:00 in New York
+    close(getHandAngles(getZonedDateTime(instant, 'Asia/Kolkata')).hour, 345); // 23:30 in New Delhi
   });
 });
 
@@ -84,6 +88,10 @@ describe('time formatting', () => {
     assert.equal(relativeDay('en', 5), 'In 5 days');
     assert.equal(formatUtcOffset(-180), 'UTC−03:00');
     assert.equal(formatUtcOffset(-120), 'UTC−02:00');
+    assert.equal(formatUtcOffset(540), 'UTC+09:00');
+    assert.equal(formatUtcOffset(345), 'UTC+05:45');
+    assert.equal(formatUtcOffset(-210), 'UTC−03:30');
+    assert.equal(formatUtcOffset(0), 'UTC+00:00');
     assert.equal(formatDuration(8 * 3_600_000 + 34 * 60_000 + 30_500), '08:34:30');
     assert.equal(formatPercent('pt', 0.5731), '57,31%');
     assert.equal(formatPercent('en', 0.29), '29.00%');

@@ -1,22 +1,26 @@
 /**
  * Application bootstrap and render loop.
  *
- * A single requestAnimationFrame loop reads one São Paulo snapshot per frame
- * from sao-paulo-time.js and hands it to the UI modules. Work is split by how
- * often it really changes:
+ * The selected location's IANA time zone (settings.timeZone, São Paulo by
+ * default) is the single temporal reference: a single requestAnimationFrame
+ * loop reads one snapshot per frame from zoned-time.js for that zone and hands
+ * it to the UI modules. Work is split by how often it really changes:
  *   - every frame:  analog hands (smooth motion)
- *   - every second: digital time and progress indicators
+ *   - every second: digital time, UTC offset, progress, tab title
  *   - every date:   calendar rings and the date readout
- * Settings changes re-render only what they affect.
+ * Settings changes re-render only what they affect; a location change resets
+ * the cached render state so everything is redrawn for the new zone at once.
  */
 
-import { getSaoPauloDateTime, getTemporalProgress } from './sao-paulo-time.js';
+import { getTemporalProgress, getZonedDateTime } from './zoned-time.js';
 import { createTimeSource, parseSimulation } from './time-source.js';
 import { CalendarRings } from './calendar.js';
 import { AnalogClock, DigitalClock } from './clock.js';
 import { ProgressPanel } from './progress.js';
-import { SettingsPanel, loadSettings } from './settings.js';
-import { applyTranslations, formatTimeString, t } from './i18n.js';
+import { SettingsPanel, loadRecentLocations, loadSettings } from './settings.js';
+import { formatLocation, locations } from './locations.js';
+import { LocationPicker } from './location-picker.js';
+import { applyTranslations, formatTimeString, formatUtcOffset, getDictionary, t } from './i18n.js';
 import {
   TooltipController,
   describeDay,
@@ -32,14 +36,17 @@ import {
 const HANDS_INTRO_DELAY_MS = 550;
 const HANDS_INTRO_MS = 900;
 const INTRO_TOTAL_MS = 1700;
+const NOTICE_MS = 9000;
 const THEME_COLORS = { dark: '#0a0b0d', light: '#e7eaee' };
 
 const root = document.documentElement;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-let settings = loadSettings();
+const storageReport = {};
+let settings = loadSettings(undefined, storageReport);
+let place = locations.resolve(settings.timeZone, settings.location);
 
-const timeSource = createTimeSource(parseSimulation(window.location.search));
+const timeSource = createTimeSource(parseSimulation(window.location.search), { timeZone: settings.timeZone });
 const calendar = new CalendarRings(document.getElementById('clock-rings'));
 const analog = new AnalogClock(
   document.getElementById('clock-face-details'),
@@ -48,6 +55,9 @@ const analog = new AnalogClock(
 const digital = new DigitalClock(document.getElementById('digital'));
 const progressPanel = new ProgressPanel(document.getElementById('progress'));
 const simBadge = document.getElementById('sim-badge');
+const notice = document.getElementById('notice');
+const locationChip = document.getElementById('location-chip');
+const locationCard = document.getElementById('location-card');
 const tooltips = new TooltipController({
   element: document.getElementById('tooltip'),
   liveRegion: document.getElementById('live-region'),
@@ -56,21 +66,55 @@ const tooltips = new TooltipController({
 
 let lastDateKey = null;
 let lastSecond = null;
+let lastOffset = null;
 let lastTitle = '';
 let introStart = 0;
 let introRunning = false;
 
 const easeOutCubic = (x) => 1 - (1 - x) ** 3;
-const readNow = () => getSaoPauloDateTime(timeSource.now());
+const readNow = () => getZonedDateTime(timeSource.now(), settings.timeZone);
 const timeOptions = () => ({ hour12: settings.hourFormat === '12', showSeconds: settings.showSeconds });
+const placeNames = () => formatLocation(place, settings.language);
 
 /* ---------- Rendering ---------- */
 
-function renderDate(now) {
-  calendar.update(now, { animate: lastDateKey !== null });
+/** Every place where the location's name or zone is shown. */
+function renderLocation() {
+  const names = placeNames();
+  const { locale } = getDictionary(settings.language);
+  root.dataset.timeZone = settings.timeZone;
+  for (const node of document.querySelectorAll('[data-location]')) {
+    const value = {
+      short: names.short,
+      medium: names.medium,
+      full: names.full,
+      zone: settings.timeZone,
+      'time-in': t(settings.language, 'timeIn', names.short),
+    }[node.dataset.location];
+    if (value !== undefined && node.textContent !== value) node.textContent = value;
+  }
+  document.getElementById('clock-dial').setAttribute('aria-label', t(settings.language, 'clockLabel', names.short));
+  for (const opener of [locationChip, locationCard]) {
+    opener.setAttribute('aria-label', t(settings.language, 'changeLocation', names.full));
+  }
+  analog.setCity(names.short.toLocaleUpperCase(locale));
+}
+
+function renderDate(now, animate = lastDateKey !== null) {
+  calendar.update(now, { animate });
   digital.renderDate(now, settings.language);
-  analog.setFaceLabels('SÃO PAULO', now.utcOffsetMinutes);
   lastDateKey = now.dateKey;
+}
+
+/** UTC offset: checked every second, since DST changes it in the middle of a day. */
+function renderOffset(now) {
+  if (now.utcOffsetMinutes === lastOffset) return;
+  analog.setOffset(now.utcOffsetMinutes);
+  digital.renderOffset(now.utcOffsetMinutes);
+  for (const node of document.querySelectorAll('[data-utc-offset]')) {
+    node.textContent = formatUtcOffset(now.utcOffsetMinutes);
+  }
+  lastOffset = now.utcOffsetMinutes;
 }
 
 function renderProgress(now, growth = 1) {
@@ -79,7 +123,8 @@ function renderProgress(now, growth = 1) {
 }
 
 function renderTitle(now) {
-  const title = `${formatTimeString(now, { ...timeOptions(), showSeconds: false })} · São Paulo — Modern Circular Clock`;
+  const time = formatTimeString(now, { ...timeOptions(), showSeconds: false });
+  const title = `${time} · ${placeNames().short} — Modern Circular Clock`;
   if (title !== lastTitle) {
     document.title = title;
     lastTitle = title;
@@ -88,6 +133,7 @@ function renderTitle(now) {
 
 function renderSecond(now, growth = 1) {
   digital.renderTime(now, timeOptions());
+  renderOffset(now);
   renderProgress(now, growth);
   renderTitle(now);
   tooltips.refresh();
@@ -98,11 +144,12 @@ function renderSecond(now, growth = 1) {
 function tooltipContent(target) {
   const now = readNow();
   const { language } = settings;
+  const names = placeNames();
   const { ring } = target.dataset;
   switch (target.dataset.tip) {
     case 'ring-item': {
       const value = Number(target.dataset.index) + 1;
-      if (ring === 'days') return describeDay(now, value, language);
+      if (ring === 'days') return describeDay(now, value, language, names.full);
       if (ring === 'months') return describeMonth(now, value, language);
       return describeWeekday(now, value, language);
     }
@@ -111,9 +158,9 @@ function tooltipContent(target) {
       if (ring === 'months') return describeYear(now, language);
       return describeWeek(now, language);
     case 'progress':
-      return describeProgress(target.dataset.progressRow, now, getTemporalProgress(now), language);
+      return describeProgress(target.dataset.progressRow, now, getTemporalProgress(now), language, names.full);
     case 'face':
-      return describeFace(now, language, timeOptions());
+      return describeFace(now, language, { ...timeOptions(), placeName: names.short });
     default:
       return null;
   }
@@ -146,6 +193,14 @@ function renderSimulationBadge() {
   simBadge.hidden = false;
 }
 
+function showNotice(text) {
+  notice.textContent = text;
+  notice.hidden = false;
+  window.setTimeout(() => {
+    notice.hidden = true;
+  }, NOTICE_MS);
+}
+
 function applySettings(changedKey = null) {
   root.dataset.theme = settings.theme;
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLORS[settings.theme]);
@@ -158,10 +213,29 @@ function applySettings(changedKey = null) {
     renderSimulationBadge();
   }
 
+  if (changedKey === 'timeZone') {
+    // A running simulation is re-interpreted in the new zone (the real clock
+    // is an absolute instant and is unaffected).
+    timeSource.setTimeZone(settings.timeZone);
+    // New temporal reference: forget everything rendered for the old zone so
+    // nothing is skipped just because a value happens to be equal.
+    lastDateKey = null;
+    lastSecond = null;
+    lastOffset = null;
+    lastTitle = '';
+  }
+
+  if (changedKey === null || changedKey === 'language' || changedKey === 'timeZone') {
+    place = locations.resolve(settings.timeZone, settings.location);
+    renderLocation();
+  }
+
   if (changedKey !== null) {
     const now = readNow();
-    if (changedKey === 'language') digital.renderDate(now, settings.language);
+    if (changedKey === 'timeZone') renderDate(now, true); // rings turn to the new date
+    else if (changedKey === 'language') digital.renderDate(now, settings.language);
     renderSecond(now);
+    analog.render(now, { smooth: !reducedMotion.matches, intro: introProgress(performance.now()) });
   }
 }
 
@@ -185,7 +259,7 @@ function startIntro() {
 function start() {
   calendar.enableExploration((node, ring) => tooltips.show(node, 'keyboard', { owner: ring }));
   applySettings();
-  new SettingsPanel({
+  const settingsPanel = new SettingsPanel({
     dialog: document.getElementById('settings'),
     openButton: document.getElementById('settings-open'),
     settings,
@@ -194,6 +268,27 @@ function start() {
       applySettings(key);
     },
   });
+
+  const picker = new LocationPicker({
+    dialog: document.getElementById('location-picker'),
+    directory: locations,
+    getContext: () => ({
+      language: settings.language,
+      timeZone: settings.timeZone,
+      placeKey: place.key,
+      now: timeSource.now(),
+      recents: loadRecentLocations(),
+    }),
+    onSelect: (choice) => settingsPanel.setLocation(choice),
+  });
+  // The header chip is a shortcut to the picker; the settings card opens it too.
+  for (const opener of [locationChip, locationCard]) {
+    opener.addEventListener('click', () => picker.open(opener));
+  }
+
+  if (storageReport.rejectedTimeZone) {
+    showNotice(t(settings.language, 'zoneRejected', storageReport.rejectedTimeZone));
+  }
 
   const now = readNow();
   renderDate(now);

@@ -1,14 +1,16 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getPeriodBounds, getSaoPauloDateTime, getTemporalProgress } from '../js/sao-paulo-time.js';
+import { getPeriodBounds, getTemporalProgress, getZonedDateTime, zonedTimeToEpoch } from '../js/zoned-time.js';
+
+const SP = 'America/Sao_Paulo';
 
 const at = (iso) => Date.parse(iso);
-const progressAt = (iso) => getTemporalProgress(getSaoPauloDateTime(at(iso)));
+const progressAt = (iso, zone = SP) => getTemporalProgress(getZonedDateTime(at(iso), zone));
 const close = (actual, expected, epsilon = 1e-9) =>
   assert.ok(Math.abs(actual - expected) < epsilon, `${actual} ≠ ${expected}`);
 
-describe('temporal progress (São Paulo)', () => {
+describe('temporal progress (São Paulo, the default)', () => {
   test('day: midnight is 0%, noon is 50%, 23:59:59.999 is almost 100%', () => {
     close(progressAt('2026-10-01T03:00:00Z').day, 0);
     close(progressAt('2026-10-01T15:00:00Z').day, 0.5);
@@ -52,8 +54,30 @@ describe('temporal progress (São Paulo)', () => {
   });
 
   test('a 23-hour DST day is measured on its real length', () => {
-    const bounds = getPeriodBounds(getSaoPauloDateTime(at('2018-11-04T15:00:00Z')));
+    const bounds = getPeriodBounds(getZonedDateTime(at('2018-11-04T15:00:00Z'), SP));
     assert.equal(bounds.day.end - bounds.day.start, 23 * 3_600_000);
     close(progressAt('2018-11-04T14:30:00Z').day, 0.5); // 12:30 local, 11.5 h of 23 h
+  });
+});
+
+describe('temporal progress in other zones', () => {
+  const ZONES = ['America/Sao_Paulo', 'America/New_York', 'America/Los_Angeles', 'Europe/London',
+    'Europe/Paris', 'Asia/Tokyo', 'Asia/Kolkata', 'Australia/Sydney'];
+
+  test('local noon is half of the local day in every zone', () => {
+    for (const zone of ZONES) {
+      const noon = zonedTimeToEpoch({ year: 2026, month: 1, day: 15, hours: 12 }, zone);
+      close(getTemporalProgress(getZonedDateTime(noon, zone)).day, 0.5);
+    }
+  });
+
+  test('the month and year boundaries are those of the zone', () => {
+    // 2027-01-01 00:00 in Tokyo is still Dec 31st 12:00 in São Paulo.
+    const instant = at('2026-12-31T15:00:00Z');
+    close(progressAt('2026-12-31T15:00:00Z', 'Asia/Tokyo').year, 0);
+    close(progressAt('2026-12-31T15:00:00Z', 'Asia/Tokyo').month, 0);
+    close(progressAt('2026-12-31T15:00:00Z').day, 0.5);
+    assert.ok(progressAt('2026-12-31T15:00:00Z').year > 0.99);
+    assert.equal(getZonedDateTime(instant, 'Asia/Tokyo').year, 2027);
   });
 });

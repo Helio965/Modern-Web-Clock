@@ -1,10 +1,17 @@
 /**
- * Runs the whole test suite once per device time zone.
+ * Runs the whole test suite once per *device* time zone.
  *
- * Each run starts Node with a different TZ, which changes what Date's local
- * getters (getHours, getDate, ...) return, exactly like opening the site on a
- * computer configured for that region. The suite must pass unchanged in all
- * of them, proving the app's results only depend on America/Sao_Paulo.
+ * Two different things are called "time zone" in this project:
+ *   - the device time zone: how the computer running the code is configured
+ *     (here: the TZ environment variable of each Node run);
+ *   - the selected time zone: the location chosen in the app (the IANA zone
+ *     passed explicitly to zoned-time.js, e.g. "Asia/Tokyo").
+ *
+ * Each run changes what Date's local getters (getHours, getDate, ...) return,
+ * exactly like opening the site on a computer configured for that region. The
+ * suite — which asserts fixed results for São Paulo, Tokyo, New York, London,
+ * Sydney... — must pass unchanged in all of them, proving that the clock only
+ * depends on the selected zone, never on the device's.
  *
  * Usage: npm run test:tz
  */
@@ -19,6 +26,7 @@ const DEVICE_ZONES = [
   'America/New_York',
   'Europe/London',
   'Asia/Tokyo',
+  'Asia/Kolkata', // UTC+05:30
   'Pacific/Kiritimati', // UTC+14
   'Pacific/Pago_Pago', // UTC−11
 ];

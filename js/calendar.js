@@ -4,9 +4,9 @@
  *
  * Each ring places its items at a fixed angular step, so a month with fewer
  * days leaves a larger "gap" segment (as in the reference design). The ring
- * rotates so that the current São Paulo value always sits under a fixed
- * highlight window at 12 o'clock; rotations are cumulative, so moving from
- * 31 → 01 or DEZ → JAN keeps turning forward instead of spinning back.
+ * rotates so that the current value — in the selected time zone — always sits
+ * under a fixed highlight window at 12 o'clock; rotations are cumulative, so
+ * moving from 31 → 01 or DEZ → JAN keeps turning forward instead of back.
  *
  * The DOM is built once. Updates only toggle classes, swap a few labels and
  * set one CSS transform per ring — nothing is rebuilt per frame.
@@ -261,8 +261,8 @@ export class CalendarRings {
   }
 
   /**
-   * Applies a São Paulo date. Call it when the date changes (or on start);
-   * pass animate: false to jump straight to the position.
+   * Applies a zoned date. Call it when the date changes (a new day or a new
+   * location) or on start; pass animate: false to jump straight there.
    */
   update(dateTime, { animate = true } = {}) {
     this.dateTime = dateTime;

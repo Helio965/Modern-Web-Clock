@@ -20,7 +20,7 @@ function svg(name, attributes, parent) {
   return node;
 }
 
-/** Time left until São Paulo midnight, rounded up so "now + remaining" is exactly 24:00. */
+/** Time left until local midnight in the snapshot's zone, rounded up so "now + remaining" is exactly midnight. */
 export function timeUntilMidnight(dateTime, progress) {
   return formatDuration(Math.ceil((progress.bounds.day.end - dateTime.epochMs) / 1000) * 1000);
 }
@@ -75,8 +75,8 @@ export class ProgressPanel {
   }
 
   /**
-   * @param {object} dateTime São Paulo snapshot
-   * @param {ReturnType<import('./sao-paulo-time.js').getTemporalProgress>} progress
+   * @param {object} dateTime zoned snapshot
+   * @param {ReturnType<import('./zoned-time.js').getTemporalProgress>} progress
    * @param {string} language
    * @param {number} [growth=1] 0 → 1 while the arcs grow in during the intro
    */

@@ -1,12 +1,20 @@
 /**
- * Analog hands and digital readout, both fed by São Paulo snapshots.
+ * Analog hands and digital readout, both fed by snapshots of the selected
+ * time zone (see zoned-time.js). Nothing here knows which zone it is.
  */
 
-import { toZonedIsoString } from './sao-paulo-time.js';
+import { toZonedIsoString } from './zoned-time.js';
 import { formatTime, formatUtcOffset, monthShort, weekdayLong } from './i18n.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const CENTER = 500;
+
+// The city label sits 116 units above the centre; the tick marks at 2 and 10
+// o'clock leave about 300 units of free width at that height.
+const CITY_MAX_WIDTH = 300;
+const CITY_FONT_SIZE = 18;
+const CITY_LETTER_SPACING = 7;
+const CITY_MIN_SCALE = 0.45;
 
 /**
  * Continuous hand angles in degrees (0 = 12 o'clock, clockwise).
@@ -63,13 +71,36 @@ export class AnalogClock {
     };
   }
 
-  setFaceLabels(city, utcOffsetMinutes) {
-    this.cityLabel.textContent = city;
+  /**
+   * Location name on the face ("SÃO PAULO", "TÓQUIO"...). Long names are
+   * scaled down (font size and spacing together) to stay inside the face.
+   */
+  setCity(name) {
+    const label = this.cityLabel;
+    if (label.textContent === name && !label.style.fontSize) return;
+    label.textContent = name;
+    label.style.fontSize = '';
+    label.style.letterSpacing = '';
+    let width = 0;
+    try {
+      width = label.getComputedTextLength();
+    } catch {
+      return; // not rendered (e.g. hidden): keep the default size
+    }
+    if (width > CITY_MAX_WIDTH) {
+      const scale = Math.max(CITY_MIN_SCALE, CITY_MAX_WIDTH / width);
+      label.style.fontSize = `${(CITY_FONT_SIZE * scale).toFixed(2)}px`;
+      label.style.letterSpacing = `${(CITY_LETTER_SPACING * scale).toFixed(2)}px`;
+    }
+  }
+
+  /** Current UTC offset under the centre; changes on DST transitions too. */
+  setOffset(utcOffsetMinutes) {
     this.offsetLabel.textContent = formatUtcOffset(utcOffsetMinutes);
   }
 
   /**
-   * @param {object} dateTime São Paulo snapshot
+   * @param {object} dateTime zoned snapshot
    * @param {{ smooth?: boolean, intro?: number }} options
    *        intro: 0 → 1 while the hands sweep in from 12 o'clock.
    */
@@ -95,7 +126,7 @@ export class DigitalClock {
     this.offset = root.querySelector('[data-digital="offset"]');
   }
 
-  /** Called once per São Paulo second (and when the format changes). */
+  /** Called once per second of the zoned clock (and when the format changes). */
   renderTime(dateTime, { hour12 = false, showSeconds = true } = {}) {
     const parts = formatTime(dateTime, { hour12 });
     this.hm.textContent = parts.hm;
@@ -106,12 +137,16 @@ export class DigitalClock {
     this.time.setAttribute('datetime', toZonedIsoString(dateTime));
   }
 
-  /** Called when the São Paulo date (or the language) changes. */
+  /** Called when the date (or the language, or the zone) changes. */
   renderDate(dateTime, language) {
     this.day.textContent = String(dateTime.day).padStart(2, '0');
     this.month.textContent = monthShort(language, dateTime.month);
     this.year.textContent = String(dateTime.year);
     this.weekday.textContent = weekdayLong(language, dateTime.isoWeekday).toLocaleUpperCase(language === 'en' ? 'en-US' : 'pt-BR');
-    this.offset.textContent = formatUtcOffset(dateTime.utcOffsetMinutes);
+  }
+
+  /** Called when the UTC offset changes (zone switch or DST transition). */
+  renderOffset(utcOffsetMinutes) {
+    this.offset.textContent = formatUtcOffset(utcOffsetMinutes);
   }
 }
