@@ -232,6 +232,7 @@ input {
 }
 
 .zone-chip {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -310,11 +311,14 @@ input {
 /* ---------- Digital readout ---------- */
 .panel--digital {
   grid-area: digital;
+  container-type: inline-size;
 }
 
 .digital-time {
   margin-top: 10px;
-  font-size: clamp(2.6rem, 3.8vw, 4.4rem);
+  font-size: clamp(2.2rem, 3.4vw, 4rem);
+  /* Sized from the panel width so "03:47:39 PM" always fits. */
+  font-size: clamp(2rem, 17cqi, 4.4rem);
   font-weight: 250;
   line-height: 1.05;
   letter-spacing: -0.01em;
@@ -382,6 +386,7 @@ input {
 /* ---------- Progress ---------- */
 .panel--progress {
   grid-area: progress;
+  container-type: inline-size;
 }
 
 .progress-body {
@@ -482,6 +487,22 @@ input {
   text-overflow: ellipsis;
 }
 
+/* Rings beside the legend whenever the panel is wide enough. */
+@container (min-width: 250px) {
+  .progress-body {
+    flex-wrap: nowrap;
+    column-gap: 20px;
+  }
+
+  .progress-rings {
+    width: clamp(90px, 34cqi, 160px);
+  }
+
+  .progress-legend {
+    flex: 1 1 auto;
+  }
+}
+
 /* ---------- Header controls ---------- */
 .icon-button {
   display: inline-grid;
@@ -516,6 +537,8 @@ input {
 }
 
 .sim-badge {
+  flex: 0 1 auto;
+  min-width: 0;
   padding: 5px 10px;
   border: 1px dashed var(--accent-year);
   border-radius: var(--radius-pill);

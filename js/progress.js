@@ -3,7 +3,7 @@
  * plus a legend with percentages. Values come from getTemporalProgress().
  */
 
-import { formatDuration, formatPercent, t, weekdayLong } from './i18n.js';
+import { formatDuration, formatPercent, t } from './i18n.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const CENTER = 100;
@@ -31,7 +31,7 @@ export function progressDetail(key, dateTime, progress, language) {
     case 'day':
       return t(language, 'timeLeft', timeUntilMidnight(dateTime, progress));
     case 'week':
-      return t(language, 'weekdayOfWeek', weekdayLong(language, dateTime.isoWeekday), dateTime.isoWeekday);
+      return t(language, 'dayOfTotal', dateTime.isoWeekday, 7);
     case 'month':
       return t(language, 'dayOfTotal', dateTime.day, dateTime.daysInMonth);
     case 'year':

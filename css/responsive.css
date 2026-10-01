@@ -1,0 +1,212 @@
+/* ==========================================================================
+   Responsive layouts and accessibility preferences.
+
+   Mobile first (style.css): clock, then the digital readout, then progress.
+   ≥ 600px:              clock on top, the two panels side by side below.
+   ≥ 800px landscape:    clock on the left, panels stacked on the right.
+   ≥ 1180px landscape:   digital | clock | progress.
+   The clock size is always the largest square that fits the free space.
+   ========================================================================== */
+
+/* ---------- Small phones ---------- */
+@media (max-width: 479px) {
+  .brand__name {
+    display: none;
+  }
+
+  .ring__label {
+    font-size: 34px;
+  }
+
+  .ring__gap-label {
+    font-size: 24px;
+  }
+}
+
+/* ---------- Tablets in portrait / large phones ---------- */
+@media (min-width: 600px) {
+  .stage {
+    --clock-size: max(300px, min(calc(100vw - 2 * var(--pad)), calc(100dvh - var(--topbar-h) - 340px), 760px));
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "clock clock"
+      "digital progress";
+    align-items: stretch;
+    max-width: 920px;
+    margin-inline: auto;
+    width: 100%;
+  }
+
+  .panel {
+    max-width: none;
+  }
+
+  .hide-progress .stage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "clock"
+      "digital";
+  }
+
+  .hide-progress .panel--digital {
+    max-width: 440px;
+  }
+}
+
+/* ---------- Landscape tablets and small laptops ---------- */
+@media (min-width: 800px) and (orientation: landscape) {
+  .stage {
+    --side: clamp(270px, 30vw, 380px);
+    --clock-size: max(280px, min(
+      calc(100dvh - var(--topbar-h) - 2 * var(--pad)),
+      calc(100vw - var(--side) - 2 * var(--pad) - var(--gap)),
+      960px
+    ));
+
+    grid-template-columns: var(--clock-size) var(--side);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "clock digital"
+      "clock progress";
+    justify-content: center;
+    align-content: center;
+    max-width: none;
+  }
+
+  /* The two panels meet in the middle of the clock's height. */
+  .clock {
+    align-self: center;
+  }
+
+  .panel--digital {
+    align-self: end;
+  }
+
+  .panel--progress {
+    align-self: start;
+  }
+
+  .hide-progress .stage {
+    grid-template-columns: var(--clock-size) var(--side);
+    grid-template-rows: auto;
+    grid-template-areas: "clock digital";
+  }
+
+  .hide-progress .panel--digital {
+    align-self: center;
+  }
+}
+
+/* ---------- Desktop ---------- */
+@media (min-width: 1180px) and (orientation: landscape) {
+  .stage {
+    --side: clamp(270px, 22vw, 380px);
+    --clock-size: max(320px, min(
+      calc(100dvh - var(--topbar-h) - 2 * var(--pad)),
+      calc(100vw - 2 * var(--side) - 2 * var(--pad) - 2 * var(--gap)),
+      1000px
+    ));
+
+    grid-template-columns: var(--side) var(--clock-size) var(--side);
+    grid-template-rows: auto;
+    grid-template-areas: "digital clock progress";
+  }
+
+  .hide-progress .stage {
+    grid-template-columns: var(--side) var(--clock-size) var(--side);
+    grid-template-rows: auto;
+    grid-template-areas: "digital clock .";
+  }
+
+  .panel--digital,
+  .panel--progress {
+    align-self: center;
+  }
+
+  .panel--progress .progress-body {
+    flex-direction: column;
+  }
+
+  .panel--progress .progress-rings {
+    width: clamp(130px, 52cqi, 190px);
+  }
+
+  .panel--progress .progress-legend {
+    flex-basis: auto;
+    width: 100%;
+  }
+}
+
+/* ---------- Short landscape screens (phones turned sideways) ---------- */
+@media (max-height: 520px) and (orientation: landscape) {
+  :root {
+    --topbar-h: 52px;
+  }
+
+  .topbar {
+    padding-block: 6px;
+  }
+
+  /* Panels are taller than the screen here: keep the clock in view. */
+  .clock {
+    position: sticky;
+    top: 8px;
+    align-self: start;
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  /* Decorative motion is removed; the clock keeps working (the second hand
+     ticks once per second instead of sweeping — see app.js). */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+}
+
+/* ---------- Forced colors (Windows high contrast) ---------- */
+@media (forced-colors: active) {
+  .ring__band,
+  .ring__gap,
+  .progress-track {
+    stroke: Canvas;
+  }
+
+  .ring__edge,
+  .tick,
+  .clock__bezel,
+  .clock__face {
+    stroke: CanvasText;
+  }
+
+  .ring__label,
+  .ring__gap-label,
+  .face-label {
+    fill: CanvasText;
+  }
+
+  .ring__item.is-current .ring__label {
+    fill: Highlight;
+  }
+
+  .ring__window,
+  .progress-arc {
+    stroke: Highlight;
+  }
+
+  .hand line {
+    stroke: CanvasText;
+  }
+
+  .hand-cap,
+  .hand--second circle {
+    fill: CanvasText;
+  }
+}
