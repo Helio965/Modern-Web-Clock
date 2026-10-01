@@ -2,7 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { getHandAngles } from '../js/clock.js';
-import { getSaoPauloDateTime } from '../js/sao-paulo-time.js';
+import { getZonedDateTime } from '../js/zoned-time.js';
 import {
   formatDuration,
   formatLongDate,
@@ -15,6 +15,7 @@ import {
   relativeDay,
 } from '../js/i18n.js';
 
+const SP = 'America/Sao_Paulo';
 const at = (iso) => Date.parse(iso);
 const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} ≠ ${expected}`);
 
@@ -33,8 +34,8 @@ describe('hand angles', () => {
   });
 
   test('no jump across minute, hour and day changes', () => {
-    const before = getSaoPauloDateTime(at('2026-11-01T02:59:59.999Z')); // 23:59:59.999 in São Paulo
-    const after = getSaoPauloDateTime(at('2026-11-01T03:00:00.000Z')); // 00:00:00.000
+    const before = getZonedDateTime(at('2026-11-01T02:59:59.999Z'), SP); // 23:59:59.999 in São Paulo
+    const after = getZonedDateTime(at('2026-11-01T03:00:00.000Z'), SP); // 00:00:00.000
     const a = getHandAngles(before);
     const b = getHandAngles(after);
     // Every hand is a hair before a full turn, then at 0°: continuous modulo 360°.
@@ -45,7 +46,7 @@ describe('hand angles', () => {
   });
 
   test('angles come from São Paulo time, not the device', () => {
-    const dt = getSaoPauloDateTime(at('2026-10-01T18:00:00Z')); // 15:00 in São Paulo
+    const dt = getZonedDateTime(at('2026-10-01T18:00:00Z'), SP); // 15:00 in São Paulo
     close(getHandAngles(dt).hour, 90);
   });
 });

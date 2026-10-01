@@ -2,7 +2,7 @@
  * Time source: where "now" comes from.
  *
  * In normal use this is simply the device clock (Date.now()), i.e. an
- * absolute instant that sao-paulo-time.js converts to America/Sao_Paulo.
+ * absolute instant that zoned-time.js converts to the selected time zone.
  *
  * For development and testing, a simulated clock can be started from any
  * São Paulo wall-clock moment through the URL, without waiting for that date
@@ -15,7 +15,7 @@
  * zone itself is never configurable.
  */
 
-import { daysInMonth, zonedTimeToEpoch } from './sao-paulo-time.js';
+import { DEFAULT_TIME_ZONE, daysInMonth, zonedTimeToEpoch } from './zoned-time.js';
 
 const SIM_PATTERN = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/;
 const MAX_SPEED = 86_400;
@@ -47,7 +47,7 @@ export function parseSimulation(search) {
     : 1;
 
   return {
-    startEpochMs: zonedTimeToEpoch(year, month, day, hours, minutes, seconds),
+    startEpochMs: zonedTimeToEpoch({ year, month, day, hours, minutes, seconds }, DEFAULT_TIME_ZONE),
     speed,
     label: raw.trim(),
   };

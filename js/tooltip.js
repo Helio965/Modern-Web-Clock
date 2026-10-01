@@ -7,7 +7,7 @@
  * mirrors keyboard-driven content into an aria-live region.
  */
 
-import { addDays, daysBetween, daysInMonth, isoWeekday } from './sao-paulo-time.js';
+import { addDays, daysBetween, daysInMonth, isoWeekday } from './zoned-time.js';
 import {
   formatDayMonth,
   formatLongDate,

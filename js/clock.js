@@ -2,7 +2,7 @@
  * Analog hands and digital readout, both fed by São Paulo snapshots.
  */
 
-import { toZonedIsoString } from './sao-paulo-time.js';
+import { toZonedIsoString } from './zoned-time.js';
 import { formatTime, formatUtcOffset, monthShort, weekdayLong } from './i18n.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';

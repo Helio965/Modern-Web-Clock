@@ -2,7 +2,7 @@
  * Interface languages (Português / English) and text formatting helpers.
  *
  * Language only changes how values are written. Every value still comes from
- * sao-paulo-time.js, so switching language never changes the time zone.
+ * zoned-time.js, so switching language never changes the time zone.
  */
 
 const pad2 = (value) => String(value).padStart(2, '0');

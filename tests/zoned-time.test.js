@@ -2,19 +2,22 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  TIME_ZONE,
+  DEFAULT_TIME_ZONE,
   addDays,
   dayOfYear,
   daysInMonth,
   daysInYear,
-  getSaoPauloDateTime,
+  getZonedDateTime,
   getUtcOffsetMs,
   isLeapYear,
   isoWeek,
   isoWeekday,
   toZonedIsoString,
   zonedTimeToEpoch,
-} from '../js/sao-paulo-time.js';
+} from '../js/zoned-time.js';
+
+const SP = 'America/Sao_Paulo';
+const sp = (ms) => getZonedDateTime(ms, SP);
 
 const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 const at = (iso) => Date.parse(iso);
@@ -22,13 +25,13 @@ const pad = (n) => String(n).padStart(2, '0');
 const wall = (dt) => `${dt.dateKey} ${pad(dt.hours)}:${pad(dt.minutes)}:${pad(dt.seconds)}`;
 
 describe(`fixed reference zone (device zone: ${deviceZone})`, () => {
-  test('the reference zone is America/Sao_Paulo', () => {
-    assert.equal(TIME_ZONE, 'America/Sao_Paulo');
-    assert.equal(getSaoPauloDateTime(0).timeZone, 'America/Sao_Paulo');
+  test('the default zone is America/Sao_Paulo and snapshots carry their zone', () => {
+    assert.equal(DEFAULT_TIME_ZONE, 'America/Sao_Paulo');
+    assert.equal(sp(0).timeZone, 'America/Sao_Paulo');
   });
 
   test('converts an instant to São Paulo wall-clock fields', () => {
-    const dt = getSaoPauloDateTime(at('2026-10-01T18:25:30.250Z'));
+    const dt = sp(at('2026-10-01T18:25:30.250Z'));
     assert.equal(wall(dt), '2026-10-01 15:25:30');
     assert.equal(dt.milliseconds, 250);
     assert.equal(dt.isoWeekday, 4); // Thursday
@@ -44,41 +47,41 @@ describe(`fixed reference zone (device zone: ${deviceZone})`, () => {
 
   test('device-local getters disagree with São Paulo when the device is elsewhere', () => {
     const instant = at('2026-10-01T18:25:30Z');
-    const sp = getSaoPauloDateTime(instant);
+    const local = sp(instant);
     const device = new Date(instant);
     if (deviceZone === 'America/Sao_Paulo') {
-      assert.equal(device.getHours(), sp.hours);
+      assert.equal(device.getHours(), local.hours);
     } else {
       // UTC → 18h, New York → 14h, London → 19h, Tokyo → 03h (already Oct 2nd).
-      assert.notEqual(device.getHours(), sp.hours);
+      assert.notEqual(device.getHours(), local.hours);
     }
-    assert.equal(sp.hours, 15);
+    assert.equal(local.hours, 15);
   });
 
   test('Tokyo already being on the next day does not move the São Paulo date', () => {
     const instant = at('2026-10-01T18:25:30Z'); // 03:25 on Oct 2nd in Tokyo
-    const dt = getSaoPauloDateTime(instant);
+    const dt = sp(instant);
     assert.equal(dt.dateKey, '2026-10-01');
     assert.equal(dt.isoWeekday, 4);
   });
 
   test('milliseconds are preserved and negative epochs floor correctly', () => {
-    assert.equal(getSaoPauloDateTime(at('2026-10-01T18:25:30.999Z')).milliseconds, 999);
-    const beforeEpoch = getSaoPauloDateTime(-1);
+    assert.equal(sp(at('2026-10-01T18:25:30.999Z')).milliseconds, 999);
+    const beforeEpoch = sp(-1);
     assert.equal(wall(beforeEpoch), '1969-12-31 20:59:59');
     assert.equal(beforeEpoch.milliseconds, 999);
   });
 
   test('calls within the same second share fields but return fresh objects', () => {
-    const a = getSaoPauloDateTime(at('2026-10-01T18:25:30.100Z'));
-    const b = getSaoPauloDateTime(at('2026-10-01T18:25:30.900Z'));
+    const a = sp(at('2026-10-01T18:25:30.100Z'));
+    const b = sp(at('2026-10-01T18:25:30.900Z'));
     assert.notEqual(a, b);
     assert.equal(wall(a), wall(b));
     assert.equal(b.milliseconds - a.milliseconds, 800);
   });
 
   test('rejects invalid instants', () => {
-    assert.throws(() => getSaoPauloDateTime(Number.NaN), TypeError);
+    assert.throws(() => sp(Number.NaN), TypeError);
   });
 });
 
@@ -101,7 +104,7 @@ describe('day, month and year transitions (23:59:58 → 00:00:01)', () => {
   for (const t of transitions) {
     test(t.name, () => {
       const midnight = at(t.midnightUtc);
-      const seq = [-2000, -1000, 0, 1000].map((offset) => getSaoPauloDateTime(midnight + offset));
+      const seq = [-2000, -1000, 0, 1000].map((offset) => sp(midnight + offset));
       assert.deepEqual(seq.map(wall), [
         `${t.before} 23:59:58`,
         `${t.before} 23:59:59`,
@@ -116,10 +119,10 @@ describe('day, month and year transitions (23:59:58 → 00:00:01)', () => {
   }
 
   test('new year resets day of year and recomputes the year length', () => {
-    const lastDay = getSaoPauloDateTime(at('2028-12-31T12:00:00Z'));
+    const lastDay = sp(at('2028-12-31T12:00:00Z'));
     assert.equal(lastDay.dayOfYear, 366);
     assert.equal(lastDay.daysInYear, 366);
-    const firstDay = getSaoPauloDateTime(at('2029-01-01T03:00:00Z'));
+    const firstDay = sp(at('2029-01-01T03:00:00Z'));
     assert.equal(firstDay.year, 2029);
     assert.equal(firstDay.month, 1);
     assert.equal(firstDay.dayOfYear, 1);
@@ -173,9 +176,9 @@ describe('calendar rules', () => {
 
 describe('São Paulo wall time → instant', () => {
   test('known conversions', () => {
-    assert.equal(zonedTimeToEpoch(2026, 10, 1, 15, 25, 30), at('2026-10-01T18:25:30Z'));
-    assert.equal(zonedTimeToEpoch(2027, 1, 1), at('2027-01-01T03:00:00Z'));
-    assert.equal(getUtcOffsetMs(at('2026-10-01T18:25:30Z')), -3 * 3_600_000);
+    assert.equal(zonedTimeToEpoch({ year: 2026, month: 10, day: 1, hours: 15, minutes: 25, seconds: 30 }, SP), at('2026-10-01T18:25:30Z'));
+    assert.equal(zonedTimeToEpoch({ year: 2027, month: 1, day: 1 }, SP), at('2027-01-01T03:00:00Z'));
+    assert.equal(getUtcOffsetMs(at('2026-10-01T18:25:30Z'), SP), -3 * 3_600_000);
   });
 
   test('round-trips random instants between 1990 and 2100', () => {
@@ -188,22 +191,22 @@ describe('São Paulo wall time → instant', () => {
     };
     for (let i = 0; i < 1500; i += 1) {
       const instant = start + Math.floor(random() * span);
-      const dt = getSaoPauloDateTime(instant);
-      const back = zonedTimeToEpoch(dt.year, dt.month, dt.day, dt.hours, dt.minutes, dt.seconds, dt.milliseconds);
-      assert.equal(wall(getSaoPauloDateTime(back)), wall(dt));
+      const dt = sp(instant);
+      const back = zonedTimeToEpoch({ year: dt.year, month: dt.month, day: dt.day, hours: dt.hours, minutes: dt.minutes, seconds: dt.seconds, milliseconds: dt.milliseconds }, SP);
+      assert.equal(wall(sp(back)), wall(dt));
     }
   });
 
   test('historical DST start (2018-11-04): midnight was skipped', () => {
-    assert.equal(wall(getSaoPauloDateTime(at('2018-11-04T02:59:59Z'))), '2018-11-03 23:59:59');
-    const firstInstant = getSaoPauloDateTime(at('2018-11-04T03:00:00Z'));
+    assert.equal(wall(sp(at('2018-11-04T02:59:59Z'))), '2018-11-03 23:59:59');
+    const firstInstant = sp(at('2018-11-04T03:00:00Z'));
     assert.equal(wall(firstInstant), '2018-11-04 01:00:00');
     assert.equal(firstInstant.utcOffsetMinutes, -120);
-    assert.equal(zonedTimeToEpoch(2018, 11, 4), at('2018-11-04T03:00:00Z'));
+    assert.equal(zonedTimeToEpoch({ year: 2018, month: 11, day: 4 }, SP), at('2018-11-04T03:00:00Z'));
   });
 
   test('historical DST end (2019-02-16): ambiguous hour resolves to the earlier instant', () => {
-    assert.equal(zonedTimeToEpoch(2019, 2, 16, 23, 30), at('2019-02-17T01:30:00Z'));
-    assert.equal(zonedTimeToEpoch(2019, 2, 17), at('2019-02-17T03:00:00Z'));
+    assert.equal(zonedTimeToEpoch({ year: 2019, month: 2, day: 16, hours: 23, minutes: 30 }, SP), at('2019-02-17T01:30:00Z'));
+    assert.equal(zonedTimeToEpoch({ year: 2019, month: 2, day: 17 }, SP), at('2019-02-17T03:00:00Z'));
   });
 });

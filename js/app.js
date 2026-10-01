@@ -1,8 +1,8 @@
 /**
  * Application bootstrap and render loop.
  *
- * A single requestAnimationFrame loop reads one São Paulo snapshot per frame
- * from sao-paulo-time.js and hands it to the UI modules. Work is split by how
+ * A single requestAnimationFrame loop reads one zoned snapshot per frame from
+ * zoned-time.js and hands it to the UI modules. Work is split by how
  * often it really changes:
  *   - every frame:  analog hands (smooth motion)
  *   - every second: digital time and progress indicators
@@ -10,7 +10,7 @@
  * Settings changes re-render only what they affect.
  */
 
-import { getSaoPauloDateTime, getTemporalProgress } from './sao-paulo-time.js';
+import { DEFAULT_TIME_ZONE, getTemporalProgress, getZonedDateTime } from './zoned-time.js';
 import { createTimeSource, parseSimulation } from './time-source.js';
 import { CalendarRings } from './calendar.js';
 import { AnalogClock, DigitalClock } from './clock.js';
@@ -61,7 +61,7 @@ let introStart = 0;
 let introRunning = false;
 
 const easeOutCubic = (x) => 1 - (1 - x) ** 3;
-const readNow = () => getSaoPauloDateTime(timeSource.now());
+const readNow = () => getZonedDateTime(timeSource.now(), DEFAULT_TIME_ZONE);
 const timeOptions = () => ({ hour12: settings.hourFormat === '12', showSeconds: settings.showSeconds });
 
 /* ---------- Rendering ---------- */

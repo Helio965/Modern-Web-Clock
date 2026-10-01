@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getSaoPauloDateTime, getTemporalProgress } from '../js/sao-paulo-time.js';
+import { getTemporalProgress, getZonedDateTime } from '../js/zoned-time.js';
 import {
   describeDay,
   describeFace,
@@ -15,7 +15,7 @@ import {
 } from '../js/tooltip.js';
 
 // 2026-10-01 15:25:30 in São Paulo (already Oct 2nd in Tokyo).
-const now = getSaoPauloDateTime(Date.parse('2026-10-01T18:25:30Z'));
+const now = getZonedDateTime(Date.parse('2026-10-01T18:25:30Z'), 'America/Sao_Paulo');
 
 describe('tooltip content (São Paulo date)', () => {
   test('current day', () => {

@@ -1,10 +1,12 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getPeriodBounds, getSaoPauloDateTime, getTemporalProgress } from '../js/sao-paulo-time.js';
+import { getPeriodBounds, getTemporalProgress, getZonedDateTime } from '../js/zoned-time.js';
+
+const SP = 'America/Sao_Paulo';
 
 const at = (iso) => Date.parse(iso);
-const progressAt = (iso) => getTemporalProgress(getSaoPauloDateTime(at(iso)));
+const progressAt = (iso, zone = SP) => getTemporalProgress(getZonedDateTime(at(iso), zone));
 const close = (actual, expected, epsilon = 1e-9) =>
   assert.ok(Math.abs(actual - expected) < epsilon, `${actual} ≠ ${expected}`);
 
@@ -52,7 +54,7 @@ describe('temporal progress (São Paulo)', () => {
   });
 
   test('a 23-hour DST day is measured on its real length', () => {
-    const bounds = getPeriodBounds(getSaoPauloDateTime(at('2018-11-04T15:00:00Z')));
+    const bounds = getPeriodBounds(getZonedDateTime(at('2018-11-04T15:00:00Z'), SP));
     assert.equal(bounds.day.end - bounds.day.start, 23 * 3_600_000);
     close(progressAt('2018-11-04T14:30:00Z').day, 0.5); // 12:30 local, 11.5 h of 23 h
   });

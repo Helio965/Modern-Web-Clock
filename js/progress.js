@@ -76,7 +76,7 @@ export class ProgressPanel {
 
   /**
    * @param {object} dateTime São Paulo snapshot
-   * @param {ReturnType<import('./sao-paulo-time.js').getTemporalProgress>} progress
+   * @param {ReturnType<import('./zoned-time.js').getTemporalProgress>} progress
    * @param {string} language
    * @param {number} [growth=1] 0 → 1 while the arcs grow in during the intro
    */
