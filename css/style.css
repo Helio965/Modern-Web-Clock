@@ -279,6 +279,32 @@ input {
   aspect-ratio: 1;
 }
 
+/* Shown only when the browser cannot resolve America/Sao_Paulo (see index.html). */
+.zone-error {
+  display: none;
+}
+
+.no-timezone .app {
+  opacity: 1;
+  animation: none;
+}
+
+.no-timezone .stage {
+  display: none;
+}
+
+.no-timezone .zone-error {
+  display: grid;
+  gap: 8px;
+  max-width: 34rem;
+  margin: 2rem auto;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--accent-day);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  text-align: center;
+}
+
 .noscript {
   max-width: 32rem;
   margin: 2rem auto;

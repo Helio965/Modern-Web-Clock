@@ -20,7 +20,6 @@ const DICTIONARIES = {
     weekdaysLong: ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado',
       'Domingo'],
     text: {
-      appName: 'Modern Circular Clock',
       location: 'São Paulo — Brasil',
       spTime: 'Horário de São Paulo',
       clockLabel: 'Relógio circular no horário de São Paulo',
@@ -75,7 +74,6 @@ const DICTIONARIES = {
       zoneFixed: 'Fixo',
       zoneNote: 'O instante atual vem do relógio do dispositivo e é sempre convertido para America/Sao_Paulo. O fuso não é configurável.',
       simulation: 'Simulação',
-      zoneError: 'Este navegador não consegue calcular o fuso America/Sao_Paulo. Atualize o navegador para usar o relógio.',
     },
   },
   en: {
@@ -86,7 +84,6 @@ const DICTIONARIES = {
     weekdaysShort: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
     weekdaysLong: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     text: {
-      appName: 'Modern Circular Clock',
       location: 'São Paulo — Brazil',
       spTime: 'São Paulo time',
       clockLabel: 'Circular clock in São Paulo time',
@@ -141,7 +138,6 @@ const DICTIONARIES = {
       zoneFixed: 'Fixed',
       zoneNote: 'The current instant comes from the device clock and is always converted to America/Sao_Paulo. The time zone cannot be changed.',
       simulation: 'Simulation',
-      zoneError: 'This browser cannot compute the America/Sao_Paulo time zone. Please update your browser to use the clock.',
     },
   },
 };

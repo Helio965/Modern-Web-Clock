@@ -17,6 +17,14 @@
       var saved = JSON.parse(localStorage.getItem('modern-circular-clock:settings') || 'null');
       if (saved && saved.theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
     } catch (error) { /* storage unavailable: keep the dark default */ }
+
+    // The whole app depends on the browser resolving America/Sao_Paulo. If it
+    // cannot, show a message instead of silently using another time zone.
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo' }).format(0);
+    } catch (error) {
+      document.documentElement.classList.add('no-timezone');
+    }
   </script>
   <script type="module" src="js/app.js"></script>
 </head>
@@ -48,6 +56,11 @@
         </svg>
       </button>
     </header>
+
+    <p class="zone-error" role="alert">
+      <span lang="pt-BR">Este navegador não consegue calcular o fuso America/Sao_Paulo. Atualize o navegador para usar o relógio.</span>
+      <span lang="en">This browser cannot compute the America/Sao_Paulo time zone. Please update your browser to use the clock.</span>
+    </p>
 
     <main class="stage" id="main">
       <figure class="clock" id="clock">
