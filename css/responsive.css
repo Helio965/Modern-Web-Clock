@@ -147,8 +147,11 @@
   .topbar {
     padding-block: 6px;
   }
+}
 
-  /* Panels are taller than the screen here: keep the clock in view. */
+/* Clock in its own column (≥ 800px) but panels taller than the screen:
+   keep the clock in view while the panels scroll beside it. */
+@media (max-height: 520px) and (min-width: 800px) and (orientation: landscape) {
   .clock {
     position: sticky;
     top: 8px;
