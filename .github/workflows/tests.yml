@@ -22,5 +22,5 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Same suite with the device in 7 time zones
+      - name: Same suite with the device in 8 time zones
         run: npm run test:tz
